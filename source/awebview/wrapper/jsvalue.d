@@ -300,6 +300,18 @@ struct JSValue
 
 unittest
 {
+    import std.stdio;
+    JSValue v = true;
+    assert(v.isBoolean);
+    assert(v.get!bool);
+    
+    v = false;
+    assert(v.isBoolean);
+    assert(!v.get!bool);
+}
+
+unittest
+{
     import std.conv;
     import std.stdio;
 
