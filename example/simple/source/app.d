@@ -18,10 +18,6 @@ import awebview.gui.application,
 
 import deimos.glfw.glfw3;
 
-shared static immutable myCSS = `* {
-font-family:'ヒラギノ角ゴ Pro W3', 'Hiragino Kaku Gothic Pro', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif;
-}`;
-
 
 void main()
 {
@@ -34,18 +30,7 @@ void main()
     WebCore webCore = WebCore.initialize(config);
     scope(exit) WebCore.shutdown();
 
-    auto pref = WebPreferences();
-    with(pref){
-        enableWebAudio = true;
-        enableWebGL = true;
-        enableGPUAcceleration = true;
-        enableJavascript = true;
-        enableDart = true;
-        userStylesheet = myCSS;
-        enableSmoothScrolling = true;
-        enableRemoteFonts = true;
-        defaultEncoding = "utf-8";
-    }
+    auto pref = WebPreferences.recommended;
 
     auto session = webCore.createWebSession(WebString(""), pref);
 

@@ -6,6 +6,12 @@ import awebview.wrapper.webstring : WebStringCpp;
 
 import carbon.memory;
 
+
+shared static immutable myCSS = `* {
+font-family:'ヒラギノ角ゴ Pro W3', 'Hiragino Kaku Gothic Pro', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif;
+}`;
+
+
 struct WebPreferences
 {
     static WebPreferences opCall() nothrow @nogc
@@ -13,6 +19,25 @@ struct WebPreferences
         WebPreferences wp;
         WebPreferencesMember.ctor(&wp._wp);
         return wp;
+    }
+
+
+    static WebPreferences recommended() nothrow @nogc
+    {
+        auto pref = WebPreferences();
+        with(pref){
+            enableWebAudio = true;
+            enableWebGL = true;
+            enableGPUAcceleration = true;
+            enableJavascript = true;
+            enableDart = true;
+            userStylesheet = myCSS;
+            enableSmoothScrolling = true;
+            enableRemoteFonts = true;
+            defaultEncoding = "utf-8";
+        }
+
+        return pref;
     }
 
 
