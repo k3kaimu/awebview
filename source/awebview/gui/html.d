@@ -83,9 +83,10 @@ abstract class HTMLPage
 
 class TemplateHTMLPage(string form) : HTMLPage
 {
-    this(string id)
+    this(string id, Variant[string] exts = null)
     {
         super(id);
+        _exts = exts;
     }
 
 
@@ -114,8 +115,13 @@ class TemplateHTMLPage(string form) : HTMLPage
     }
 
 
+    @property
+    inout(Variant[string]) exts() inout { return _exts; }
+
+
   private:
     HTMLElement[string] _elems;
+    Variant[string] _exts;
 }
 
 
@@ -259,8 +265,20 @@ if(is(Element : HTMLElement))
     this(T...)(auto ref T args)
     {
         import std.algorithm : forward;
+
+      static if(is(typeof(super(forward!args[0 .. $-1]))) &&
+                is(typeof(args[$-1]) : Variant[string]))
+      {
+        super(forward!args[0 .. $-1]);
+        _exts = args[$-1];
+      }
+      else
         super(forward!args);
     }
+
+
+    @property
+    inout(Variant[string]) exts() inout { return _exts; }
 
 
     override
@@ -270,6 +288,9 @@ if(is(Element : HTMLElement))
         import carbon.templates : Lstr;
         return mixin(Lstr!(form));
     }
+
+  private:
+    Variant[string] _exts;
 }
 
 
