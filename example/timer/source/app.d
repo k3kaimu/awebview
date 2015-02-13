@@ -38,7 +38,7 @@ void main()
     WebCore webCore = WebCore.initialize(config);
     scope(exit) WebCore.shutdown();
 
-    auto pref = WebPreferences.defValue;
+    auto pref = WebPreferences.recommended;
     auto session = webCore.createWebSession(WebString(""), pref);
 
     // 画面の作成
