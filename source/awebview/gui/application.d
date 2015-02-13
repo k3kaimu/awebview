@@ -31,9 +31,6 @@ class GLFWApplication
             _act.onUpdate();
             glfwPollEvents();
 
-            _act.title = format("fooo %s", fmNum);
-            ++fmNum;
-
             glfwSwapBuffers(_act.glfwWindow);
 
             Thread.sleep(dur!"msecs"(10));
@@ -43,5 +40,4 @@ class GLFWApplication
 
   private:
     GLFWActivity _act;
-    ulong fmNum;
 }
