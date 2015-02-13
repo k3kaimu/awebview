@@ -284,6 +284,7 @@ class GLFWActivity : WindowActivity
     override
     void onUpdate()
     {
+        super.onUpdate();
         glfwPollEvents();
         glfwSwapBuffers(_glfwWind);
     }

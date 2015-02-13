@@ -28,6 +28,7 @@ class GLFWApplication
             import std.string : format;
 
             WebCore.instance.update();
+            _act.onUpdate();
             glfwPollEvents();
 
             _act.title = format("fooo %s", fmNum);
