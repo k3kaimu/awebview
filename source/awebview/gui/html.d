@@ -41,6 +41,7 @@ abstract class HTMLPage
 
     void onStart(Activity activity)
     {
+        _activity = activity;
         foreach(key, elem; elements)
             elem.onStart(activity);
     }
@@ -64,6 +65,13 @@ abstract class HTMLPage
     {
         foreach(key, elem; elements)
             elem.postLoad();
+    }
+
+
+    @property
+    inout(Activity) activity() inout
+    {
+        return _activity;
     }
 
 
@@ -150,7 +158,7 @@ class HTMLElement
 
 
     @property pure nothrow @safe @nogc
-    Activity activity()
+    inout(Activity) activity() inout
     {
         return _activity;
     }

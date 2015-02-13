@@ -162,7 +162,7 @@ class Activity
 
 
     @property
-    JSValue[string] objects()
+    inout(JSValue[string]) objects() inout
     {
         return _objects;
     }
@@ -188,7 +188,7 @@ class Activity
 
 
     @property
-    string tempDir()
+    string tempDir() const
     {
         import std.path : dirName;
         import std.file : thisExePath;
