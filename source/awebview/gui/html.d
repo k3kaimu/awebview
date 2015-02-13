@@ -212,22 +212,51 @@ class HTMLElement
     {
         _cachedProperties[name] = value;
 
-        auto carrier = activity.carrierObject;
-        carrier.setProperty("value", value);
+        if(value.isBoolean){
+            if(value.get!bool)
+                activity.runJS(_cache("value_set_true", mixin(Lstr!
+                    q{document.getElementById("%[id%]").%[name%] = true;}
+                )));
+            else
+                activity.runJS(_cache("value_set_false", mixin(Lstr!
+                    q{document.getElementById("%[id%]").%[name%] = false;}
+                )));
+        }else{
+            auto carrier = activity.carrierObject;
+            carrier.setProperty("value", value);
 
-        activity.runJS(_cache("value_set", mixin(Lstr!
-            q{document.getElementById(%[toLiteral(id)%]).%[name%] = _carrierObject_.value;}
-        )));
+            activity.runJS(_cache("value_set", mixin(Lstr!
+                q{document.getElementById("%[id%]").%[name%] = _carrierObject_.value;}
+            )));
+        }
     }
 
 
     JSValue opIndex(string name)
     {
         JSValue jv = activity.evalJS(_cache("value_get", mixin(Lstr!
-            q{document.getElementById(%[toLiteral(id)%]).%[name%];}
+            q{document.getElementById("%[id%]").%[name%];}
         )));
 
         return jv;
+    }
+
+
+    void invoke(T...)(string name, auto ref T args)
+    {
+      static if(T.length == 0)
+        activity.evalJS(_cache("invoke_0", mixin(Lstr!
+            q{document.getElementById("%[id%]").%[name%]();}
+        )));
+      else{
+        auto carrier = activity.carrierObject;
+        foreach(i, ref e; args)
+            carrier.setProperty(format("value%s", i), JSValue(e));
+
+        activity.evalJS(_cache("invoke", mixin(Lstr!
+            q{document.getElementById("%[id%]").%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
+        )));
+      }
     }
 
 
