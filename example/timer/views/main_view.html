@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="jp">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>MyView</title>
+
+    <link rel="stylesheet" href="views/bootstrap-3.3.2-dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="views/bootstrap-3.3.2-dist/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="views/font-awesome-4.3.0/css/font-awesome.min.css">
+    <link href="jquery-ui/jquery-ui.css", rel="stylesheet">
+</head>
+<body>
+
+<center>
+<p id="txt_timer" style="font-size: 15em;">fooobar</p><br>
+<div class="progress">
+    <div id="progress_bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;"></div>
+</div><br>
+<br>
+
+%[elements["btn_start"].html%]
+%[elements["btn_reset"].html%]
+<br>
+
+<input type="text" id="txt_secs">秒
+<br>
+
+%[elements["radio_fb_btn"].html%]
+
+</center>
+
+<!-- <audio id="msc_start" src="file://C:/Users/kazuki/Dropbox/Github/awebview/example/timer/ata_a19.ogg"> -->
+<audio id="msc_start" src='file://%[std.path.buildPath(activity.tempDir, *exts["dora_ogg"].peek!string)%]'>
+</audio>
+
+
+
+<script src="views/jquery-ui/external/jquery/jquery.js"></script>
+<script src="views/jquery-ui/jquery-ui.js"></script>
+<script src="views/bootstrap-3.3.2-dist/js/bootstrap.min.js"></script>
+</body>
+</html>
