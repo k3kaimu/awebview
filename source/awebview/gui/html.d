@@ -214,29 +214,29 @@ class HTMLElement
 
         if(value.isBoolean){
             if(value.get!bool)
-                activity.runJS(_cache("value_set_true", mixin(Lstr!
+                activity.runJS(mixin(Lstr!
                     q{document.getElementById("%[id%]").%[name%] = true;}
-                )));
+                ));
             else
-                activity.runJS(_cache("value_set_false", mixin(Lstr!
+                activity.runJS(mixin(Lstr!
                     q{document.getElementById("%[id%]").%[name%] = false;}
-                )));
+                ));
         }else{
             auto carrier = activity.carrierObject;
             carrier.setProperty("value", value);
 
-            activity.runJS(_cache("value_set", mixin(Lstr!
+            activity.runJS(mixin(Lstr!
                 q{document.getElementById("%[id%]").%[name%] = _carrierObject_.value;}
-            )));
+            ));
         }
     }
 
 
     JSValue opIndex(string name)
     {
-        JSValue jv = activity.evalJS(_cache("value_get", mixin(Lstr!
+        JSValue jv = activity.evalJS(mixin(Lstr!
             q{document.getElementById("%[id%]").%[name%];}
-        )));
+        ));
 
         return jv;
     }
@@ -245,17 +245,17 @@ class HTMLElement
     void invoke(T...)(string name, auto ref T args)
     {
       static if(T.length == 0)
-        activity.evalJS(_cache("invoke_0", mixin(Lstr!
+        activity.evalJS(mixin(Lstr!
             q{document.getElementById("%[id%]").%[name%]();}
-        )));
+        ));
       else{
         auto carrier = activity.carrierObject;
         foreach(i, ref e; args)
             carrier.setProperty(format("value%s", i), JSValue(e));
 
-        activity.evalJS(_cache("invoke", mixin(Lstr!
+        activity.evalJS(mixin(Lstr!
             q{document.getElementById("%[id%]").%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
-        )));
+        ));
       }
     }
 
@@ -265,7 +265,6 @@ class HTMLElement
     bool _hasObj;
     JSValue _v;
     Activity _activity;
-    Cache!(string[string]) _cache;
     JSValue[string] _cachedProperties;
 }
 
