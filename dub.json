@@ -45,7 +45,7 @@
     ],
 
     "dependencies": {
-        "carbon": "~master",
+        "carbon": ">=1.0.0",
         "glfw-drey": ">=0.0.4"
     }
 }
