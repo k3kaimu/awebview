@@ -1091,19 +1091,13 @@ size_t sizeOfInstance()
 { return sizeof(WebConfig); }
 
 void ctor(WebConfig * p)
-{ new(p) WebConfig();
-  WebStringArray *wp = &p->additional_options;
-  std::cout << *(void**)wp << std::endl;
-}
+{ new(p) WebConfig(); }
 
 void ctor(WebConfig * p, WebConfig const * rhs)
 { ctor(p); *p = *rhs; }
 
 WebConfig * newCtor()
-{ WebConfig *p = new WebConfig();
- WebStringArray *wp = &(p->additional_options);
-  std::cout << *(void**)wp << std::endl;
-return p; }
+{ WebConfig *p = new WebConfig(); return p; }
 
 WebConfig * newCtor(WebConfig const * rhs)
 { WebConfig *p = newCtor(); *p = *rhs; return p; }

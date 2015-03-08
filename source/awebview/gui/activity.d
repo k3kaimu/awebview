@@ -12,6 +12,8 @@ import awebview.gui.html,
        awebview.gui.methodhandler,
        deimos.glfw.glfw3;
 
+import std.exception;
+
 version(Windows)
 {
     import core.sys.windows.windows;
@@ -35,6 +37,9 @@ class Activity
         _methodHandler = new MethodHandler();
         _view.jsMethodHandler = _methodHandler;
     }
+
+
+    void onDestroy() {}
 
 
     @property
@@ -91,20 +96,65 @@ class Activity
     }
 
 
-    void load(HTMLPage page)
+    void addPage(HTMLPage page)
     {
-        if(page.id !in _loadedPages){
-            page.onStart(this);
-        }
+        _pages[page.id] = PageType(page, false);
+    }
 
-        _loadedPages[page.id] = page;
+
+    void opOpAssign(string op : "~")(HTMLPage page)
+    {
+        addPage(page);
+    }
+
+
+    HTMLPage opIndex(string id)
+    {
+        return _pages[id].page;
+    }
+
+
+    void load(string id)
+    {
+        auto p = enforce(id in _pages);
 
         if(_nowPage !is null)
             _nowPage.onDetach();
+        _nowPage = null;
 
-        _nowPage = page;
-        _nowPage.onAttach();
+        bool bInit;
+        if(!p.wasLoaded){
+            p.page.onStart(this);
+            p.wasLoaded = true;
+            bInit = true;
+        }
 
+        _nowPage = p.page;
+        _nowPage.onAttach(bInit);
+        _loadImpl(bInit);
+    }
+
+
+    void load(HTMLPage page)
+    {
+        if(page.id !in _pages || page !is _pages[page.id].page)
+            addPage(page);
+        
+        this.load(page.id);
+    }
+
+
+    void reload()
+    in {
+        assert(this.nowPage !is null);
+    }
+    body {
+        _loadImpl(false);
+    }
+
+
+    private void _loadImpl(bool isInit)
+    {
         // save html to disk
         import std.path : buildPath;
         immutable htmlPath = buildPath(this.tempDir, this.id ~ nowPage.id ~ ".html");
@@ -117,7 +167,7 @@ class Activity
         while(_view.isLoading)
             WebCore.instance.update();
 
-        _nowPage.postLoad();
+        _nowPage.onLoad(isInit);
     }
 
 
@@ -205,7 +255,9 @@ class Activity
     HTMLPage _nowPage;
     MethodHandler _methodHandler;
     JSValue[string] _objects;
-    HTMLPage[string] _loadedPages;
+
+    struct PageType { HTMLPage page; bool wasLoaded; }
+    PageType[string] _pages;
 }
 
 
@@ -260,7 +312,8 @@ class GLFWActivity : WindowActivity
     }
 
 
-    ~this()
+    override
+    void onDestroy()
     {
         _winds.remove(_glfwWind);
         glfwDestroyWindow(_glfwWind);

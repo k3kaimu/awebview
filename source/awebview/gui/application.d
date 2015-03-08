@@ -1,5 +1,8 @@
 module awebview.gui.application;
 
+import std.exception;
+import std.file;
+
 import awebview.wrapper.webcore;
 
 import awebview.gui.activity;
@@ -7,9 +10,21 @@ import deimos.glfw.glfw3;
 
 class GLFWApplication
 {
-    this(GLFWActivity activity)
+    this(GLFWActivity delegate(WebSession) createActivity)
     {
-        _act = activity;
+        enforce(glfwInit());
+        auto config = WebConfig();
+        config.additionalOptions ~= "--use-gl=desktop";
+        WebCore webCore = WebCore.initialize(config);
+        auto pref = WebPreferences.recommended;
+
+        if(exists("style.css")){
+            pref.userStylesheet = readText("style.css");
+        }
+
+        auto session = webCore.createWebSession(WebString(""), pref);
+
+        _act = createActivity(session);
     }
 
 
@@ -35,6 +50,14 @@ class GLFWApplication
 
             Thread.sleep(dur!"msecs"(10));
         }
+    }
+
+
+    void shutdown()
+    {
+        _act.onDestroy();
+        glfwTerminate();
+        WebCore.shutdown();
     }
 
 

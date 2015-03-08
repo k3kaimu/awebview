@@ -7,41 +7,35 @@
 
     "importPaths": ["source"],
 
-    "libs-windows-x86-dmd": ["awesomium4d_cw", "awesomium_omf"],
-    "libs-linux": ["awesomium-1-7", "stdc++"],
+    "libs-windows-x86-dmd": ["awesomium4d_cw", "awesomium_omf", "stlp45dm_static"],
 
+    "libs-linux": ["awesomium-1-7", "stdc++"],
     "sourceFiles-linux-x86": ["bin/linux32/awesomium4d_cw.o"],
     "sourceFiles-posix-x86_64": ["bin/linux64/awesomium4d_cw.o"],
-    
-    "copyFiles-windows-x86": ["bin/win32/awesomium_process.exe",
-                              "bin/win32/stlp45dm_static.lib",
-                              "bin/win32/avcodec-53.dll",
-                              "bin/win32/avformat-53.dll",
-                              "bin/win32/avutil-51.dll",
-                              "bin/win32/awesomium.dll",
-                              "bin/win32/icudt.dll",
-                              "bin/win32/libEGL.dll",
-                              "bin/win32/libGLESv2.dll",
-                              "bin/win32/xinput9_1_0.dll",
-                              "bin/win32/glfw3.dll",
-                              "bin/win32/awesomium4d_cw.lib",
-                              "bin/win32/awesomium_omf.lib"],
 
     "copyFiles-posix-x86_64": ["bin/linux64/awesomium_process"],
 
-    "configurations":[
-        {
-            "name": "use_as_lib",
-            "targetType": "library",
-        },
+    "configurations": [
+      {
+        "name": "library",
+        "copyFiles-windows-x86": ["bin/win32/awesomium_process.exe",
+                                  "bin/win32/avcodec-53.dll",
+                                  "bin/win32/avformat-53.dll",
+                                  "bin/win32/avutil-51.dll",
+                                  "bin/win32/awesomium.dll",
+                                  "bin/win32/icudt.dll",
+                                  "bin/win32/libEGL.dll",
+                                  "bin/win32/libGLESv2.dll",
+                                  "bin/win32/xinput9_1_0.dll",
+                                  "bin/win32/glfw3.dll"],
+      },
 
-        {
-            "name": "unittest",
-            "targetType": "executable",
-            "targetName": "unittest",
-            "buildOptions": ["debugMode", "debugInfo", "unittests", "warningsAsErrors"],
-            "dflags": ["-main"],
-        }
+      {
+        "name": "preCopyCommand",
+        "copyFiles-windows-x86": ["bin/win32/awesomium4d_cw.lib",
+                                  "bin/win32/awesomium_omf.lib",
+                                  "bin/win32/stlp45dm_static.lib"],
+      }
     ],
 
     "dependencies": {

@@ -19,6 +19,31 @@ public import carbon.event : FiredContext;
 import carbon.templates : Lstr;
 import carbon.utils : toLiteral;
 
+
+
+string buildHTMLTagAttr(in string[string] attrs)
+{
+    auto app = appender!string();
+    foreach(k, v; attrs)
+        app.formattedWrite("%s=%s ", k, toLiteral(v));
+
+    return app.data;
+}
+
+
+string buildHTMLTagAttr(string tag, string value)
+{
+    import std.string : format;
+    return format("%s=%s ", tag, toLiteral(value));
+}
+
+unittest
+{
+    assert(buildHTMLTagAttr("a", "b") == "a=b ");
+    assert(buildHTMLTagAttr(["a", "b"]) == "a=b");
+}
+
+
 abstract class HTMLPage
 {
     this(string id)
@@ -47,10 +72,10 @@ abstract class HTMLPage
     }
 
 
-    void onAttach()
+    void onAttach(bool isInitPhase)
     {
         foreach(key, elem; elements)
-            elem.onAttach();
+            elem.onAttach(isInitPhase);
     }
 
 
@@ -61,10 +86,10 @@ abstract class HTMLPage
     }
 
 
-    void postLoad()
+    void onLoad(bool isInit)
     {
         foreach(key, elem; elements)
-            elem.postLoad();
+            elem.onLoad(isInit);
     }
 
 
@@ -142,6 +167,7 @@ class HTMLElement
     }
 
 
+    @property
     WeakRef!JSObject jsobject()
     in {
         assert(_v.isObject);
@@ -151,16 +177,10 @@ class HTMLElement
     }
 
 
-    string id() const @property
-    {
-        return _id;
-    }
+    @property string id() const { return _id; }
 
 
-    string html() const @property
-    {
-        return "";
-    }
+    @property string html() const { return ""; }
 
 
     @property pure nothrow @safe @nogc
@@ -181,23 +201,34 @@ class HTMLElement
     }
 
 
-    //void onStop()
-    //{
-    //    _activity = null;
-    //    _v = JSValue.null_;
-    //}
+    void onDestroy()
+    {
+        _activity = null;
+        _v = JSValue.null_;
+    }
 
 
-    void onAttach() {}
+    void onAttach(bool isInit) {}
 
 
     void onDetach() {}
 
 
-    void postLoad()
+    void onLoad(bool isInit)
     {
-        foreach(key, ref v; _cachedProperties)
+        foreach(key, ref v; _staticProperties)
             this.opIndexAssign(v, key);
+    }
+
+
+    void staticSet(T)(string name, T value)
+    if(is(typeof(JSValue(value)) : JSValue))
+    {
+        JSValue jv = JSValue(value);
+        _staticProperties[name] = jv;
+        if(this.activity){
+            this.opIndexAssign(jv, name);
+        }
     }
 
 
@@ -210,8 +241,6 @@ class HTMLElement
 
     void opIndexAssign(JSValue value, string name)
     {
-        _cachedProperties[name] = value;
-
         if(value.isBoolean){
             if(value.get!bool)
                 activity.runJS(mixin(Lstr!
@@ -265,14 +294,12 @@ class HTMLElement
     bool _hasObj;
     JSValue _v;
     Activity _activity;
-    JSValue[string] _cachedProperties;
+    JSValue[string] _staticProperties;
 }
 
 
-/**
-Example:
-----------------------
-class MyButton : TemplateHTMLElement!(Element, import(`my_button.html`))
+
+class IDOnlyElement : HTMLElement
 {
     this(string id)
     {
@@ -280,11 +307,21 @@ class MyButton : TemplateHTMLElement!(Element, import(`my_button.html`))
     }
 }
 
+
+/**
+Example:
+----------------------
+class MyButton : TemplateHTMLElement!(HTMLElement,
+    q{<input type="button" id="%[id%]" value="Click me!">})
+{
+    this(string id)
+    {
+        super(id, null, false);
+    }
+}
+
 auto btn1 = new MyButton("btn1");
 assert(btn1.html == q{<input type="button" id="btn1" value="Click me!">});
-
-// my_button.html
-<input type="button" id="%[id%]" value="Click me!">
 ----------------------
 */
 class TemplateHTMLElement(Element, string form) : Element
@@ -317,9 +354,14 @@ if(is(Element : HTMLElement))
         return mixin(Lstr!(form));
     }
 
+
   private:
     Variant[string] _exts;
 }
+
+
+/// ditto
+alias TemplateHTMLElement(string form) = TemplateHTMLElement!(HTMLElement, form);
 
 
 /**

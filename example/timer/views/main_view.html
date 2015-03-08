@@ -15,17 +15,19 @@
 <body>
 
 <center>
-<p id="txt_timer" style="font-size: 15em;">fooobar</p><br>
+%[elements["txt_timer"].html%]
+<br>
+
 <div class="progress">
     <div id="progress_bar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;"></div>
-</div><br>
+</div>
 <br>
 
 %[elements["btn_start"].html%]
 %[elements["btn_reset"].html%]
 <br>
 
-<input type="text" id="txt_secs">秒
+%[elements["txt_secs"].html%]秒
 <br>
 
 %[elements["radio_fb_btn"].html%]

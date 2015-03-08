@@ -4,6 +4,7 @@ import std.conv;
 import std.format;
 import std.range;
 import std.utf;
+import std.traits;
 
 import awebview.wrapper.cpp;
 import awebview.wrapper.jsobject : JSObject;
@@ -31,7 +32,8 @@ struct JSValue
 
     this()(auto ref const WebString ws)  nothrow @nogc { this(ws.cppObj); }
 
-    this(in string str) nothrow @nogc { this(WebString(str)); }
+    this(Char)(in Char[] str) nothrow @nogc
+    if(isSomeChar!Char) { this(WebString(str)); }
 
     this(const awebview.wrapper.cpp.JSObject jso) nothrow @nogc
     {

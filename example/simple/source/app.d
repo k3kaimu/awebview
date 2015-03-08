@@ -21,76 +21,67 @@ import deimos.glfw.glfw3;
 
 void main()
 {
-    // 初期化
-    enforce(glfwInit());
-    scope(exit) glfwTerminate();
+    auto app = new GLFWApplication(delegate(WebSession session){
+        // 画面の作成
+        auto activity = new NavTabsActivity("MainActivity", "navtabs", 800, 640, "foobar", session);
+        HTMLPage home, profile, messages;
 
-    auto config = WebConfig();
-    config.additionalOptions ~= "--use-gl=desktop";
-    WebCore webCore = WebCore.initialize(config);
-    scope(exit) WebCore.shutdown();
+        auto navtabs = activity.navtabsHTMLElement;
 
-    auto pref = WebPreferences.recommended;
+        home = {
+            auto home = new TemplateHTMLPage!(import(`main_view.html`))(`Home`);
+            home ~= navtabs;
 
-    auto session = webCore.createWebSession(WebString(""), pref);
+            auto tbl = new AppendableTable("tbl");
+            home ~= tbl;
 
-    // 画面の作成
-    auto activity = new NavTabsActivity("MainActivity", "navtabs", 800, 640, "foobar", session);
-    HTMLPage home, profile, messages;
+            home ~= {
+                // btn.htmlからボタンのHTMLを構築
+                auto btn1 = new GenericButton!(import(`btn.html`))("btn1");
+                size_t cnt;
 
-    auto navtabs = activity.navtabsHTMLElement;
+                // コールバック関数の追加
+                btn1.onClick.strongConnect(delegate(FiredContext ctx, WeakRef!(const(JSArrayCpp)) array){
+                    ++cnt;
+                    btn1["value"] = format("cnt: %s", cnt);
 
-    home = {
-        auto home = new TemplateHTMLPage!(import(`main_view.html`))(`Home`);
-        home ~= navtabs;
+                    auto ct = Clock.currTime;
+                    tbl.appendRow(to!string(ct.year), to!string(ct.month), to!string(ct.day),
+                                  to!string(ct.hour), to!string(ct.minute), to!string(ct.second));
+                });
 
-        auto tbl = new AppendableTable("tbl");
-        home ~= tbl;
+                return btn1;
+            }();
 
-        home ~= {
-            // btn.htmlからボタンのHTMLを構築
-            auto btn1 = new GenericButton!(import(`btn.html`))("btn1");
-            size_t cnt;
-
-            // コールバック関数の追加
-            btn1.onClick.strongConnect(delegate(FiredContext ctx, WeakRef!(const(JSArrayCpp)) array){
-                ++cnt;
-                btn1["value"] = format("cnt: %s", cnt);
-
-                auto ct = Clock.currTime;
-                tbl.appendRow(to!string(ct.year), to!string(ct.month), to!string(ct.day),
-                              to!string(ct.hour), to!string(ct.minute), to!string(ct.second));
-            });
-
-            return btn1;
+            return home;
         }();
 
-        return home;
-    }();
+
+        profile = {
+            auto profile = new TemplateHTMLPage!(import(`profile.html`))("Tab2");
+            profile ~= navtabs;
+
+            return profile;
+        }();
 
 
-    profile = {
-        auto profile = new TemplateHTMLPage!(import(`profile.html`))("Tab2");
-        profile ~= navtabs;
+        messages = {
+            auto msg = new TemplateHTMLPage!(import(`messages.html`))("Tab3");
+            msg ~= navtabs;
 
-        return profile;
-    }();
-
-
-    messages = {
-        auto msg = new TemplateHTMLPage!(import(`messages.html`))("Tab3");
-        msg ~= navtabs;
-
-        return msg;
-    }();
+            return msg;
+        }();
 
 
-    activity.addPage(home);
-    activity.addPage(profile);
-    activity.addPage(messages);
+        activity.addPage(home);
+        activity.addPage(profile);
+        activity.addPage(messages);
 
-    activity.state = 0;
-    auto app = new GLFWApplication(activity);
+        activity.state = 0;
+
+        return activity;
+    });
+
     app.run();
 }
 
@@ -118,7 +109,7 @@ class AppendableTable : TemplateHTMLElement!(HTMLElement, import(`tbl.html`))
 
 
     override
-    void postLoad()
+    void onLoad(bool isInit)
     {
         foreach(e; _body)
             activity.runJS(mixin(Lstr!q{$("#%[id%] > tbody").append("%[e%]")}));

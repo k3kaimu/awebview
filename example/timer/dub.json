@@ -4,6 +4,24 @@
 	"copyright": "Copyright © 2015, kazuki",
 	"authors": ["kazuki"],
 	"dependencies": {
-        "awebview": "~master"
-	}
+        "carbon": ">=1.0.0",
+        "awebview": { "path": "../../" },
+	},
+
+    "configurations": [
+      {
+        "name": "application",
+        "targetType": "executable",
+        "preGenerateCommands":[
+          "dub generate --config=preCopyCommand visuald"
+        ]
+      },
+
+      {
+        "name": "preCopyCommand",
+        "subConfigurations": {
+          "awebview": "preCopyCommand"
+        }
+      }
+    ],
 }
