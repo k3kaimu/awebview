@@ -40,7 +40,7 @@ string buildHTMLTagAttr(string tag, string value)
 unittest
 {
     assert(buildHTMLTagAttr("a", "b") == "a=b ");
-    assert(buildHTMLTagAttr(["a", "b"]) == "a=b");
+    assert(buildHTMLTagAttr(["a": "b"]) == "a=b ");
 }
 
 
@@ -154,7 +154,11 @@ class TemplateHTMLPage(string form) : HTMLPage
 class HTMLElement
 {
     this(string id, bool doCreateObject)
-    {
+    in{
+        if(id is null)
+            assert(!doCreateObject);
+    }
+    body{
         _id = id;
         _hasObj = doCreateObject;
     }
@@ -177,7 +181,10 @@ class HTMLElement
     }
 
 
-    @property string id() const { return _id; }
+    final @property bool hasId() const { return _id !is null; }
+
+
+    final @property string id() const { return _id; }
 
 
     @property string html() const { return ""; }
@@ -216,14 +223,19 @@ class HTMLElement
 
     void onLoad(bool isInit)
     {
-        foreach(key, ref v; _staticProperties)
-            this.opIndexAssign(v, key);
+        if(this.hasId){
+            foreach(key, ref v; _staticProperties)
+                this.opIndexAssign(v, key);
+        }
     }
 
 
     void staticSet(T)(string name, T value)
     if(is(typeof(JSValue(value)) : JSValue))
-    {
+    in{
+        assert(this.hasId);
+    }
+    body{
         JSValue jv = JSValue(value);
         _staticProperties[name] = jv;
         if(this.activity){
@@ -234,13 +246,19 @@ class HTMLElement
 
     void opIndexAssign(T)(T value, string name)
     if(is(typeof(JSValue(value)) : JSValue))
-    {
+    in{
+        assert(this.hasId);
+    }
+    body{
         this.opIndexAssign(JSValue(value), name);
     }
 
 
     void opIndexAssign(JSValue value, string name)
-    {
+    in{
+        assert(this.hasId);
+    }
+    body{
         if(value.isBoolean){
             if(value.get!bool)
                 activity.runJS(mixin(Lstr!
@@ -262,7 +280,10 @@ class HTMLElement
 
 
     JSValue opIndex(string name)
-    {
+    in{
+        assert(this.hasId);
+    }
+    body{
         JSValue jv = activity.evalJS(mixin(Lstr!
             q{document.getElementById("%[id%]").%[name%];}
         ));
@@ -272,7 +293,10 @@ class HTMLElement
 
 
     void invoke(T...)(string name, auto ref T args)
-    {
+    in{
+        assert(this.hasId);
+    }
+    body{
       static if(T.length == 0)
         activity.evalJS(mixin(Lstr!
             q{document.getElementById("%[id%]").%[name%]();}
@@ -298,11 +322,13 @@ class HTMLElement
 }
 
 
-
 class IDOnlyElement : HTMLElement
 {
     this(string id)
-    {
+    in{
+        assert(id !is null);
+    }
+    body{
         super(id, false);
     }
 }

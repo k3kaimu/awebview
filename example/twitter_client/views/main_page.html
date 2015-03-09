@@ -13,12 +13,19 @@
 </head>
 <body>
 
-<div>
-  %[elements["iptTweetText"].html%]<br>
-  %[elements["btnTweet"].html%]
+
+<div id="div_TweetArea">
+    <div id="div_iptTweetText">
+      %[elements["iptTweetText"].html%]
+    </div>
+    <div id="div_btnTweetArea">
+      %[elements["btnTweet"].html%]
+    </div>
 </div>
 
+<div id="div_tweetTable">
 %[elements["tweetTable"].html%]
+</div>
 
 <link href="jquery-ui/jquery-ui.css", rel="stylesheet">
 <script src="views/jquery-ui/external/jquery/jquery.js"></script>
