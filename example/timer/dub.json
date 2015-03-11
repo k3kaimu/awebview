@@ -1,27 +1,35 @@
 {
-	"name": "timer",
-	"description": "A minimal D application.",
-	"copyright": "Copyright © 2015, kazuki",
-	"authors": ["kazuki"],
-	"dependencies": {
-        "carbon": ">=1.0.0",
+  "name": "timer",
+  "description": "A minimal D application.",
+  "copyright": "Copyright © 2015, kazuki",
+  "authors": ["kazuki"],
+  "dependencies": {
         "awebview": { "path": "../../" },
-	},
+  },
 
-    "configurations": [
-      {
-        "name": "application",
-        "targetType": "executable",
-        "preGenerateCommands":[
-          "dub generate --config=preCopyCommand visuald"
-        ]
-      },
+  "configurations": [
+    {
+      "name": "application",
+      "targetType": "executable",
+      "preGenerateCommands":[
+        "dub generate --config=copyCommand visuald",
+        "dub generate --config=postCopyCommand visuald"
+      ],
+      "sourceFiles-windows-x86": ["awesomium4d_cw.obj"]
+    },
 
-      {
-        "name": "preCopyCommand",
-        "subConfigurations": {
-          "awebview": "preCopyCommand"
-        }
+    {
+      "name": "copyCommand",
+      "subConfigurations": {
+        "awebview": "copyCommand"
       }
-    ],
+    },
+
+    {
+      "name": "postCopyCommand",
+      "subConfigurations": {
+        "awebview": "postCopyCommand"
+      }
+    }
+  ],
 }

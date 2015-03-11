@@ -10,17 +10,17 @@ import awebview.wrapper.websession,
 
 import awebview.gui.html,
        awebview.gui.methodhandler,
-       deimos.glfw.glfw3;
+       derelict.sdl2.sdl;
 
 import std.exception;
 
-version(Windows)
-{
-    import core.sys.windows.windows;
-    extern(C) HWND glfwGetWin32Window(GLFWwindow* window);
-}
-else version(linux)
-    extern(C) void* glfwGetX11Window(GLFWwindow* window);
+//version(Windows)
+//{
+//    import core.sys.windows.windows;
+//    extern(C) HWND glfwGetWin32Window(GLFWwindow* window);
+//}
+//else version(linux)
+//    extern(C) void* glfwGetX11Window(GLFWwindow* window);
 
 
 class Activity
@@ -39,13 +39,21 @@ class Activity
     }
 
 
-    void onDestroy() {}
+    void onDestroy()
+    {
+        foreach(k, p; _pages)
+            p.page.onDestroy();
+
+        _view.destroy();
+    }
 
 
+    final
     @property
     string id() const pure nothrow @safe @nogc { return _id; }
 
 
+    final
     @property
     inout(WebView) view() inout pure nothrow @safe @nogc
     {
@@ -108,6 +116,7 @@ class Activity
     }
 
 
+    final
     HTMLPage opIndex(string id)
     {
         return _pages[id].page;
@@ -211,6 +220,7 @@ class Activity
     }
 
 
+    final
     @property
     inout(JSValue[string]) objects() inout
     {
@@ -218,12 +228,14 @@ class Activity
     }
 
 
+    final
     auto getObject(string name)
     {
         return this._objects[name].get!(WeakRef!JSObject);
     }
 
 
+    final
     @property
     auto carrierObject()
     {
@@ -247,6 +259,9 @@ class Activity
     }
 
 
+    bool isShouldClosed() { return false; }
+
+
   private:
     string _id;
     size_t _width;
@@ -261,76 +276,62 @@ class Activity
 }
 
 
-abstract class WindowActivity : Activity
-{
-    this(string id, NativeWindow wind, size_t width, size_t height, WebView view)
-    {
-        view.parentWindow = wind;
-        super(id, width, height, view);
-    }
-
-
-    @property
-    NativeWindow parentWindow()
-    {
-        return this.view.parentWindow;
-    }
-
-
-    @property
-    NativeWindow window()
-    {
-        return this.view.window;
-    }
-
-
-    @property
-    bool isShouldClosed();
-}
-
-
-class GLFWActivity : WindowActivity
+class SDLActivity : Activity
 {
     this(string id, size_t width, size_t height, string title, WebSession session = null)
     {
         import std.string : toStringz;
         import std.exception : enforce;
 
-        _glfwWind = enforce(glfwCreateWindow(width, height, toStringz(title), null, null));
-        glfwMakeContextCurrent(_glfwWind);
-        glfwSetWindowSizeCallback(_glfwWind, &windowResizeCallback);
+        _sdlWind = enforce(SDL_CreateWindow(toStringz(title), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_RESIZABLE));
+
+        auto view = WebCore.instance.createWebView(width, height, session, WebViewType.window);
 
       version(Windows)
-        super(id, glfwGetWin32Window(_glfwWind), width, height, WebCore.instance.createWebView(width, height, session, WebViewType.window));
-      else
-        static assert(0, "Sorry, does not support your platform now.");
+      {
+        /* see https://wiki.libsdl.org/SDL_SysWMinfo */
+        SDL_SysWMinfo wmi;
+        SDL_VERSION(&(wmi.version_));
 
-      //version(linux)
-        //super(id, glfwGetX11Window(_glfwWind), width, height, WebCore.instance.createWebView(width, height, session, WebViewType.window));
+        if(SDL_GetWindowWMInfo(_sdlWind, &wmi))
+            view.parentWindow = wmi.info.win.window;
+      }
+        super(id, width, height, view);
 
-        _winds[_glfwWind] = this;
+        _winds[_sdlWind] = this;
     }
 
 
     override
     void onDestroy()
     {
-        _winds.remove(_glfwWind);
-        glfwDestroyWindow(_glfwWind);
+        _winds.remove(_sdlWind);
+        SDL_DestroyWindow(_sdlWind);
+
+        super.onDestroy();
     }
 
 
+    final
     @property
-    GLFWwindow* glfwWindow()
+    SDL_Window* sdlWindow()
     {
-        return _glfwWind;
+        return _sdlWind;
+    }
+
+
+    final
+    @property
+    uint windowID()
+    {
+        return SDL_GetWindowID(_sdlWind);
     }
 
 
     void title(string t)
     {
         import std.string : toStringz;
-        glfwSetWindowTitle(_glfwWind, toStringz(t));
+        SDL_SetWindowTitle(_sdlWind, toStringz(t));
     }
 
 
@@ -338,8 +339,7 @@ class GLFWActivity : WindowActivity
     void onUpdate()
     {
         super.onUpdate();
-        glfwPollEvents();
-        glfwSwapBuffers(_glfwWind);
+        SDL_GL_SwapWindow(_sdlWind);
     }
 
 
@@ -347,18 +347,23 @@ class GLFWActivity : WindowActivity
     @property
     bool isShouldClosed()
     {
-        return !!glfwWindowShouldClose(_glfwWind);
+        return false;
+    }
+
+
+    void onSDLEvent(const SDL_Event* event)
+    {
+        if(event.type == SDL_WINDOWEVENT
+        && event.window.event == SDL_WINDOWEVENT_RESIZED
+        && event.window.windowID == this.windowID)
+        {
+            this.resize(event.window.data1, event.window.data2);
+        }
     }
 
 
   private:
-    GLFWwindow* _glfwWind;
+    SDL_Window* _sdlWind;
 
-    static GLFWActivity[GLFWwindow*] _winds;
-
-    static extern(C) void windowResizeCallback(GLFWwindow* window, int width, int height)
-    {
-        if(auto p = window in _winds)
-            (*p).resize(width, height);
-    }
+    static SDLActivity[SDL_Window*] _winds;
 }

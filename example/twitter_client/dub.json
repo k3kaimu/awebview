@@ -10,21 +10,31 @@
         "msgpack-d": ">=0.9.6",
     },
 
-    "configurations": [
-      {
-        "name": "application",
-        "targetType": "executable",
-        "lflags-windows-x86-dmd": ["-L/exet:nt/su:windows"],
-        "preGenerateCommands":[
-          "dub generate --config=preCopyCommand visuald"
-        ]
-      },
+  "configurations": [
+    {
+      "name": "application",
+      "targetType": "executable",
+      "lflags-windows-x86-dmd": ["-L/exet:nt/su:windows"],
+      "preGenerateCommands":[
+        "dub generate --config=copyCommand visuald",
+        "dub generate --config=postCopyCommand visuald"
+      ],
+      "sourceFiles-windows-x86": ["awesomium4d_cw.obj"],
+      "copyFiles-windows-x86": ["bin/win32/libcurl.dll"],
+    },
 
-      {
-        "name": "preCopyCommand",
-        "subConfigurations": {
-          "awebview": "preCopyCommand"
-        }
+    {
+      "name": "copyCommand",
+      "subConfigurations": {
+        "awebview": "copyCommand"
       }
-    ],
+    },
+
+    {
+      "name": "postCopyCommand",
+      "subConfigurations": {
+        "awebview": "postCopyCommand"
+      }
+    }
+  ],
 }

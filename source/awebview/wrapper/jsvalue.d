@@ -302,7 +302,6 @@ struct JSValue
 
 unittest
 {
-    import std.stdio;
     JSValue v = true;
     assert(v.isBoolean);
     assert(v.get!bool);
@@ -315,7 +314,6 @@ unittest
 unittest
 {
     import std.conv;
-    import std.stdio;
 
     JSValue v = 12;
     assert(v.isInteger);

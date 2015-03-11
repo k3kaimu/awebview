@@ -18,17 +18,25 @@ import awebview.gui.application,
        awebview.gui.methodhandler,
        awebview.gui.widgets.button;
 
-import deimos.glfw.glfw3;
-
 import oauth_page;
 import main_page;
-import core.runtime;
+
+import std.file : exists;
 
 void main()
 {
-    auto app = new GLFWApplication(delegate(WebSession session){
+    auto app = SDLApplication!().instance;
+
+    auto pref = WebPreferences.recommended;
+    if(exists("style.css"))
+        pref.userStylesheet = std.file.readText("style.css");
+
+    if(exists("script.js"))
+        pref.userScript = std.file.readText("script.js");
+
+    app.createActivity(pref, delegate(WebSession session){
         // 画面の作成
-        auto activity = new GLFWActivity("MainActivity", 600, 600, "Twitter Client by D(awebview HTML GUI)", session);
+        auto activity = new SDLActivity("MainActivity", 600, 600, "Twitter Client by D(awebview HTML GUI)", session);
         activity ~= new OAuthPage();
         activity ~= new MainPage();
 
@@ -37,5 +45,5 @@ void main()
     });
     app.run();
 
-    app.shutdown();
+    writeln("end");
 }

@@ -19,8 +19,6 @@ import awebview.gui.application,
        awebview.gui.widgets.button,
        awebview.gui.widgets.text;
 
-import deimos.glfw.glfw3;
-
 
 /**
 Please put a music file name.
@@ -30,8 +28,10 @@ shared immutable effectMusicFile = "foo.ogg";
 
 void main()
 {
-    auto app = new GLFWApplication(delegate(WebSession session){
-        auto activity = new GLFWActivity("MainActivity", 1200, 600, "Timer by D(awebview HTML)", session);
+    auto app = SDLApplication!().instance;
+    app.createActivity(WebPreferences.recommended,
+    delegate(WebSession session){
+        auto activity = new SDLActivity("MainActivity", 1200, 600, "Timer by D(awebview HTML)", session);
         auto page = new TimerPage("timer_page", effectMusicFile);
 
         activity.load(page);

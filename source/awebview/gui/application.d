@@ -6,61 +6,176 @@ import std.file;
 import awebview.wrapper.webcore;
 
 import awebview.gui.activity;
-import deimos.glfw.glfw3;
+import derelict.sdl2.sdl;
 
-class GLFWApplication
+import core.thread;
+
+
+/**
+Initialize DerelictSDL2 and SDL2, Awesomium
+*/
+void defaultInitializeFunc()
 {
-    this(GLFWActivity delegate(WebSession) createActivity)
+    DerelictSDL2.load();
+    enforce(SDL_Init(SDL_INIT_VIDEO) >= 0);
+
+    auto config = WebConfig();
+    config.additionalOptions ~= "--use-gl=desktop";
+    WebCore.initialize(config);
+}
+
+
+class SDLApplication(alias initializeFunc = defaultInitializeFunc)
+{
+    private this()
     {
-        enforce(glfwInit());
-        auto config = WebConfig();
-        config.additionalOptions ~= "--use-gl=desktop";
-        WebCore webCore = WebCore.initialize(config);
-        auto pref = WebPreferences.recommended;
-
-        if(exists("style.css")){
-            pref.userStylesheet = readText("style.css");
-        }
-
-        auto session = webCore.createWebSession(WebString(""), pref);
-
-        _act = createActivity(session);
+        //_isRunning = false;
+        //_isShouldQuit = false;
     }
 
 
-    @property
-    GLFWActivity activity() pure nothrow @safe @nogc
+    static
+    SDLApplication instance() @property
     {
-        return _act;
+        if(_instance is null){
+            defaultInitializeFunc();
+            _instance = new SDLApplication();
+        }
+
+        return _instance;
+    }
+
+
+    A createActivity(A : SDLActivity)(WebPreferences pref, A delegate(WebSession) dg)
+    {
+        auto session = WebCore.instance.createWebSession(WebString(""), pref);
+
+        auto act = dg(session);
+        addActivity(act);
+
+        return act;
+    }
+
+
+    void addActivity(SDLActivity act)
+    {
+        _acts[act.id] = act;
+    }
+
+
+    final
+    @property
+    SDLActivity[string] activities() pure nothrow @safe @nogc
+    {
+        return _acts;
+    }
+
+
+    final
+    SDLActivity getActivity(uint windowID)
+    {
+        foreach(k, a; _acts)
+            if(a.windowID == windowID)
+                return a;
+
+        return null;
+    }
+
+
+    final
+    SDLActivity getActivity(string id)
+    {
+        return _acts.get(id, null);
+    }
+
+
+    final
+    SDLActivity getActivity(SDL_Window* sdlWind)
+    {
+        foreach(k, a; _acts)
+            if(a.sdlWindow == sdlWind)
+                return a;
+
+        return null;
+    }
+
+
+    void destroyActivity(string id)
+    {
+        auto act = getActivity(id);
+        act.onDestroy();
+        _acts.remove(id);
     }
 
 
     void run()
     {
-        while(!_act.isShouldClosed)
+        auto wc = WebCore.instance;
+
+        _isRunning = true;
+        while(!_isShouldQuit)
         {
-            import core.thread : Thread, dur;
-            import std.string : format;
+            wc.update();
+            {
+                SDL_Event event;
+                while(SDL_PollEvent(&event)){
+                    onSDLEvent(&event);
+                }
+            }
 
-            WebCore.instance.update();
-            _act.onUpdate();
-            glfwPollEvents();
+            foreach(k, a; _acts){
+                a.onUpdate();
 
-            glfwSwapBuffers(_act.glfwWindow);
+                if(a.isShouldClosed)
+                    destroyActivity(a.id);
+            }
 
             Thread.sleep(dur!"msecs"(10));
         }
+        _isRunning = false;
+
+        shutdown();
     }
 
 
     void shutdown()
     {
-        _act.onDestroy();
-        glfwTerminate();
-        WebCore.shutdown();
+        if(!_isShouldQuit && _isRunning)
+            _isShouldQuit = true;
+        else{
+            _isRunning = false;
+            _isShouldQuit = true;
+
+            foreach(k, activity; _acts)
+                activity.onDestroy();
+
+            SDL_Quit();
+            WebCore.shutdown();
+        }
+    }
+
+
+    void onSDLEvent(const SDL_Event* event)
+    {
+        foreach(k, a; _acts)
+            a.onSDLEvent(event);
+
+        switch(event.type)
+        {
+          case SDL_QUIT:
+            shutdown();
+            break;
+
+          default:
+            break;
+        }
     }
 
 
   private:
-    GLFWActivity _act;
+    SDLActivity[string] _acts;
+    bool _isRunning;
+    bool _isShouldQuit;
+
+    static SDLApplication _instance;
 }

@@ -432,9 +432,6 @@ struct JSArrayCpp
     {
         sink("[");
         foreach(i; 0 .. this.length){
-            import std.stdio;
-            //writefln("%s : ", i);
-            //stdout.flush();
             formattedWrite(sink, "%s", this[i]);
             if(i != this.length - 1)
                 sink(", ");

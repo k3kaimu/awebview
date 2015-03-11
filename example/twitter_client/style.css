@@ -13,36 +13,22 @@ html {
 body {
     width: 100%;
     height: 100%;
-    margin: 0 auto;
-    vertical-align: top;
 }
-
 
 #div_TweetArea {
     display: table;
     width: 100%;
-    height: 100;
-    text-align: right;
+    height: 100px;
 }
 
 #div_iptTweetText, #div_btnTweet {
     display: table-cell;
 }
 
-
-#div_TweetArea { }
-
-
 #div_iptTweetText {
-    height: 100px;
     vertical-align: top;
-}
-
-#iptTweetText {
-    height: 100px;
-    width: 100%;
-    resize: none;
-    vertical-align: top;
+    height: 100%;
+    width: calc(100% - 100px);
 }
 
 #div_btnTweet {
@@ -50,64 +36,26 @@ body {
     width: 100px;
 }
 
-#btnTweet {
-    height: 100px;
-    width: 100%;
-}
-
-#div_tweetTable {
-    width: 100%;
-}
-
-#tweetTable {
-    width: 100%;
-}
-
-
-/*
-html, body {
-    width: 100%;
-    height: 100%;
-}
-
-#div_TweetArea {
-    width: 100%;
-    height: 100px;
-}
-
-
-#div_iptTweetText {
-    margin-right: 80px;
-}
-
 #iptTweetText {
-    float: left;
+    height: 100%;
     width: 100%;
-    height: 100px;
     resize: none;
 }
 
-#div_btnTweet {
-    float: right;
-}
-
 #btnTweet {
-    width: 80px;
     height: 100px;
-    z-index: 2;
+    width: 100%;
 }
 
 #div_tweetTable {
-    clear: both;
-    overflow: scroll;
     width: 100%;
-    margin-bottom:px;
+    height: calc(100% - 100px);
 }
 
 #tweetTable {
-    height: 100%;
+    width: 100%;
+    height: calc(100% - 100px);
 }
-*/
 
 #tweetTable tr {
     width: 100%;
@@ -119,4 +67,8 @@ html, body {
 
 #tweetTable tr > th:nth-child(2){
     width: 200px;
+}
+
+#tweetTable tr > th:nth-child(3){
+    width: calc(100% - 260px);
 }

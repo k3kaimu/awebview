@@ -548,8 +548,6 @@ struct WebStringCpp
 
 
 unittest {
-    import std.stdio;
-
     WebStringCpp empty_;
     assert(empty_.length == 0);
     assert(empty_.empty);

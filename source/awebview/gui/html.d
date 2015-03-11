@@ -72,6 +72,9 @@ abstract class HTMLPage
     }
 
 
+    void onDestroy() {}
+
+
     void onAttach(bool isInitPhase)
     {
         foreach(key, elem; elements)
