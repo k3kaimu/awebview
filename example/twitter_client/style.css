@@ -13,33 +13,41 @@ html {
 body {
     width: 100%;
     height: 100%;
+    margin: 0 auto;
+    vertical-align: top;
 }
+
 
 #div_TweetArea {
     display: table;
     width: 100%;
-    height: 100px;
+    height: 100;
+    text-align: right;
 }
 
 #div_iptTweetText, #div_btnTweet {
     display: table-cell;
 }
 
+
+#div_TweetArea { }
+
+
 #div_iptTweetText {
+    height: 100px;
     vertical-align: top;
-    height: 100%;
-    width: calc(100% - 100px);
+}
+
+#iptTweetText {
+    height: 100px;
+    width: 100%;
+    resize: none;
+    vertical-align: top;
 }
 
 #div_btnTweet {
     height: 100px;
     width: 100px;
-}
-
-#iptTweetText {
-    height: 100%;
-    width: 100%;
-    resize: none;
 }
 
 #btnTweet {
@@ -49,12 +57,10 @@ body {
 
 #div_tweetTable {
     width: 100%;
-    height: calc(100% - 100px);
 }
 
 #tweetTable {
     width: 100%;
-    height: calc(100% - 100px);
 }
 
 #tweetTable tr {
@@ -67,8 +73,4 @@ body {
 
 #tweetTable tr > th:nth-child(2){
     width: 200px;
-}
-
-#tweetTable tr > th:nth-child(3){
-    width: calc(100% - 260px);
 }

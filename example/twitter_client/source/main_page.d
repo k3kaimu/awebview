@@ -1,10 +1,17 @@
 module main_page;
 
+import std.concurrency;
 import std.file;
 import std.json;
+import std.typecons;
+import std.stdio;
+
 
 import awebview.wrapper;
 import awebview.gui.html;
+import awebview.gui.datapack;
+import awebview.gui.application;
+import awebview.gui.activity;
 import awebview.gui.widgets.button;
 import awebview.gui.widgets.text;
 
@@ -26,6 +33,9 @@ class MainPage :  TemplateHTMLPage!(import(`main_page.html`))
     private
     alias TweetTextArea = TextArea!();
 
+    private
+    alias PackedDataType = DataPack!(bool, Twitter);
+
 
     this()
     {
@@ -46,27 +56,72 @@ class MainPage :  TemplateHTMLPage!(import(`main_page.html`))
 
 
     override
-    void onLoad(bool isInit)
+    void onStart(Activity activity)
     {
-        super.onLoad(isInit);
+        if(auto p = this.id in activity.application.savedData){
+            auto origin = *p;
+            auto pd = PackedDataType.unpack(*p);
 
-        if(exists(tokenFile)){
-            _twTkn = unpack!Twitter(cast(ubyte[])std.file.read(tokenFile));
-            onConnect();
-        }else if(!activity["oauthPage"].to!OAuthPage.token.isNull){
-            _twTkn = activity["oauthPage"].to!OAuthPage.token;
-            std.file.write(tokenFile, pack(_twTkn));
-            onConnect();
-        }else{
-            activity.load("oauthPage");
+            if(pd.field[0])
+                _twTkn = pd.field[1];
+
+            *p = pd.parent;
+            super.onStart(activity);
+            *p = origin;
+        }
+        else
+        {
+            super.onStart(activity);
         }
     }
 
 
-    void onConnect()
+    override
+    void onLoad(bool isInit)
+    {
+        super.onLoad(isInit);
+
+        if(this._twTkn.isNull)
+        {
+            if(activity["oauthPage"].to!OAuthPage.token.isNull)
+                activity.load("oauthPage");
+            else{
+                _twTkn = activity["oauthPage"].to!OAuthPage.token;
+                connectUserStream();
+            }
+        }
+        else
+            connectUserStream();
+    }
+
+
+    override
+    void onDestroy()
+    {
+        super.onDestroy();
+
+        if(!_twTkn.isNull){
+            PackedDataType pd;
+
+            if(auto p = this.id in SDLApplication.instance.savedData)
+                pd.parent = *p;
+
+            pd.field[0] = !_twTkn.isNull;
+            if(!_twTkn.isNull)
+                pd.field[1] = _twTkn.get;
+
+            SDLApplication.instance.savedData[this.id] = pd.pack();
+
+            _usTid.send(false);    // send dummy message
+        }
+    }
+
+
+    void connectUserStream()
     {
         auto res = _twTkn.callAPI!"userstream.user"(null);
-        _userstream = res.channel;
+        _us = res.channel;
+        _usTid = res.tid;
     }
 
 
@@ -77,7 +132,7 @@ class MainPage :  TemplateHTMLPage!(import(`main_page.html`))
 
         while(1)
         {
-            if(auto p = _userstream.popFront()){
+            if(auto p = _us.popFront()){
                 try{
                     string tw = *p;
                     auto json = parseJSON(tw);
@@ -105,6 +160,7 @@ class MainPage :  TemplateHTMLPage!(import(`main_page.html`))
 
   private:
     TweetTable _tweetTable;
-    Twitter _twTkn;
-    shared(AtomicDList!string) _userstream;
+    Nullable!Twitter _twTkn;
+    shared(AtomicDList!string) _us;
+    Tid _usTid;
 }

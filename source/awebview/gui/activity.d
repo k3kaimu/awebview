@@ -9,6 +9,7 @@ import awebview.wrapper.websession,
        awebview.wrapper.cpp : NativeWindow;
 
 import awebview.gui.html,
+       awebview.gui.application,
        awebview.gui.methodhandler,
        derelict.sdl2.sdl;
 
@@ -39,13 +40,63 @@ class Activity
     }
 
 
+    void onStart(Application app)
+    {
+        _app = app;
+
+        foreach(k, p; _pages)
+            p.page.onStart(this);
+
+        if(_nowPage !is null){
+            string loadId = _nowPage.id;
+            _nowPage = null;        // avoid onDetach()
+            this.load(loadId);
+        }
+    }
+
+
+    void onAttach()
+    {
+        _isAttached = true;
+    }
+
+
+    void onUpdate()
+    {
+        _nowPage.onUpdate();
+    }
+
+
+    void onDetach()
+    {
+        _isAttached = false;
+    }
+
+
     void onDestroy()
     {
-        foreach(k, p; _pages)
+        foreach(k, p; _pages){
+            p.page.onDetach();
             p.page.onDestroy();
+        }
 
         _view.destroy();
     }
+
+
+    final
+    @property
+    bool isAttached() const pure nothrow @safe @nogc { return _isAttached; }
+
+
+    final
+    @property
+    bool isDetached() const pure nothrow @safe @nogc { return !_isAttached; }
+
+
+    final
+    @property
+    inout(Application) application() inout pure nothrow @safe @nogc { return _app; }
 
 
     final
@@ -107,6 +158,9 @@ class Activity
     void addPage(HTMLPage page)
     {
         _pages[page.id] = PageType(page, false);
+
+        if(_app !is null && _app.isRunning)
+            page.onStart(this);
     }
 
 
@@ -125,22 +179,26 @@ class Activity
 
     void load(string id)
     {
+        immutable bool isStarted = this.application !is null && this.application.isRunning;
+
         auto p = enforce(id in _pages);
 
-        if(_nowPage !is null)
+        if(_nowPage !is null && isStarted)
             _nowPage.onDetach();
-        _nowPage = null;
-
-        bool bInit;
-        if(!p.wasLoaded){
-            p.page.onStart(this);
-            p.wasLoaded = true;
-            bInit = true;
-        }
 
         _nowPage = p.page;
-        _nowPage.onAttach(bInit);
-        _loadImpl(bInit);
+
+        if(isStarted)
+        {
+            bool bInit;
+            if(!p.wasLoaded){
+                p.wasLoaded = true;
+                bInit = true;
+            }
+
+            _nowPage.onAttach(bInit);
+            _loadImpl(bInit);
+        }
     }
 
 
@@ -148,7 +206,7 @@ class Activity
     {
         if(page.id !in _pages || page !is _pages[page.id].page)
             addPage(page);
-        
+
         this.load(page.id);
     }
 
@@ -243,12 +301,6 @@ class Activity
     }
 
 
-    void onUpdate()
-    {
-        _nowPage.onUpdate();
-    }
-
-
     @property
     string tempDir() const
     {
@@ -263,6 +315,7 @@ class Activity
 
 
   private:
+    Application _app;
     string _id;
     size_t _width;
     size_t _height;
@@ -270,6 +323,7 @@ class Activity
     HTMLPage _nowPage;
     MethodHandler _methodHandler;
     JSValue[string] _objects;
+    bool _isAttached;
 
     struct PageType { HTMLPage page; bool wasLoaded; }
     PageType[string] _pages;
@@ -283,7 +337,7 @@ class SDLActivity : Activity
         import std.string : toStringz;
         import std.exception : enforce;
 
-        _sdlWind = enforce(SDL_CreateWindow(toStringz(title), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_RESIZABLE));
+        _sdlWind = enforce(SDL_CreateWindow(toStringz(title), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN));
 
         auto view = WebCore.instance.createWebView(width, height, session, WebViewType.window);
 
@@ -299,6 +353,22 @@ class SDLActivity : Activity
         super(id, width, height, view);
 
         _winds[_sdlWind] = this;
+    }
+
+
+    override
+    void onAttach()
+    {
+        super.onAttach();
+        SDL_ShowWindow(_sdlWind);
+    }
+
+
+    override
+    void onDetach()
+    {
+        super.onDetach();
+        SDL_HideWindow(_sdlWind);
     }
 
 

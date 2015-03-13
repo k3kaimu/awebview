@@ -28,7 +28,7 @@ shared immutable effectMusicFile = "foo.ogg";
 
 void main()
 {
-    auto app = SDLApplication!().instance;
+    auto app = SDLApplication.instance;
     app.createActivity(WebPreferences.recommended,
     delegate(WebSession session){
         auto activity = new SDLActivity("MainActivity", 1200, 600, "Timer by D(awebview HTML)", session);

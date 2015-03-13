@@ -2,12 +2,17 @@ module tweet_table;
 
 import std.uri : encodeComponent;
 import std.algorithm : map;
+import std.utf : UTFException;
 
 import carbon.utils : toLiteral;
 import carbon.templates;
 
-import awebview.gui.html;
+import awebview.gui.html,
+       awebview.gui.activity;
+
 import awebview.wrapper;
+
+import msgpack;
 
 
 immutable HTMLTableFormat = q{
@@ -79,6 +84,48 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
 
 
     override
+    void onStart(HTMLPage page)
+    {
+        if(auto p = this.id in page.activity.application.savedData){
+            ubyte[] myData = *p;
+
+            auto pf = unpack!PackedField(*p);
+            this._ths = pf.ths;
+            this._tds = pf.tds;
+
+            if(this._tds.length > 100)
+                this._tds = this._tds[$-100 .. $];
+
+            *p = pf.parentData;
+            super.onStart(page);
+            *p = myData;
+        }
+        else
+        {
+            super.onStart(page);
+        }
+    }
+
+
+    override
+    void onDestroy()
+    {
+        auto app = this.activity.application;
+
+        super.onDestroy();
+
+        PackedField pf;
+        pf.ths = _ths;
+        pf.tds = _tds;
+
+        if(auto p = this.id in app.savedData)
+            pf.parentData = *p;
+
+        app.savedData[this.id] = pack(pf);
+    }
+
+
+    override
     void onLoad(bool isInit)
     {
         super.onLoad(isInit);
@@ -100,8 +147,12 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
     void rerenderingBody()
     {
         auto app = appender!wstring();
-        foreach(e; _tds)
-            appendTR(app, e[0], e[1], e[2]);
+        foreach_reverse(e; _tds){
+            try
+                appendTR(app, e[0], e[1], e[2]);
+            catch(UTFException ex)
+                appendTR(app, e[0], e[1], ex.to!string);
+        }
         activity.carrierObject.setProperty("value", JSValue(app.data));
         activity.runJS(mixin(Lstr!q{$("#%[id%] > tbody").html(_carrierObject_.value);}));
     }
@@ -124,8 +175,6 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
     private
     void appendTR(Writer)(ref Writer w, string imageURL, string username, string tweet)
     {
-        //import std.stdio;
-        //writeln(toLiteral(imageURL)[1 .. $-1]);
         w.put(mixin(Lstr!`<tr><td><img src=%[toLiteral(imageURL)%]></td><td>%[username%]</td><td>%[tweet%]</td></tr>`));
     }
 
@@ -133,4 +182,6 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
   private:
     string[] _ths;
     string[3][] _tds;
+
+    struct PackedField { string[] ths; string[3][] tds; ubyte[] parentData; }
 }

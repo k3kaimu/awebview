@@ -7,30 +7,58 @@ import awebview.wrapper.webcore;
 
 import awebview.gui.activity;
 import derelict.sdl2.sdl;
+import msgpack;
 
 import core.thread;
 
 
-/**
-Initialize DerelictSDL2 and SDL2, Awesomium
-*/
-void defaultInitializeFunc()
+abstract class Application
 {
-    DerelictSDL2.load();
-    enforce(SDL_Init(SDL_INIT_VIDEO) >= 0);
+    this(string savedFileName)
+    {
+        _savedFileName = savedFileName;
+        if(exists(savedFileName))
+            _savedData = unpack!(ubyte[][string])(cast(ubyte[])std.file.read(savedFileName));
+    }
 
-    auto config = WebConfig();
-    config.additionalOptions ~= "--use-gl=desktop";
-    WebCore.initialize(config);
+
+    void onDestroy();
+
+    final
+    @property
+    ref ubyte[][string] savedData() pure nothrow @safe @nogc { return _savedData; }
+
+    void addActivity(Activity activity);
+
+    Activity getActivity(string id);
+
+    void attachActivity(string id);
+    void detachActivity(string id);
+    void destroyActivity(string id);
+
+    void run();
+    bool isRunning() @property;
+
+    void shutdown()
+    {
+        if(_savedData.length)
+            std.file.write(_savedFileName, pack(_savedData));
+    }
+
+  private:
+    ubyte[][string] _savedData;
+    string _savedFileName;
 }
 
 
-class SDLApplication(alias initializeFunc = defaultInitializeFunc)
+class SDLApplication : Application
 {
-    private this()
+    static immutable savedDataFileName = "saved.mpac";
+
+    private
+    this()
     {
-        //_isRunning = false;
-        //_isShouldQuit = false;
+        super(savedDataFileName);
     }
 
 
@@ -38,11 +66,31 @@ class SDLApplication(alias initializeFunc = defaultInitializeFunc)
     SDLApplication instance() @property
     {
         if(_instance is null){
-            defaultInitializeFunc();
+            DerelictSDL2.load();
+            enforce(SDL_Init(SDL_INIT_VIDEO) >= 0);
+
+            auto config = WebConfig();
+            config.additionalOptions ~= "--use-gl=desktop";
+            WebCore.initialize(config);
+
             _instance = new SDLApplication();
         }
 
         return _instance;
+    }
+
+
+    override
+    void onDestroy()
+    {
+        foreach(id, activity; _acts){
+            activity.onDetach();
+            activity.onDestroy();
+        }
+
+        foreach(id, activity; _detachedActs){
+            activity.onDestroy();
+        }
     }
 
 
@@ -57,9 +105,27 @@ class SDLApplication(alias initializeFunc = defaultInitializeFunc)
     }
 
 
+    override
+    void addActivity(Activity act)
+    in {
+      assert(typeid(act) == typeid(SDLActivity));
+    }
+    body {
+        addActivity(cast(SDLActivity)act);
+    }
+
+
     void addActivity(SDLActivity act)
-    {
+    in {
+        assert(act !is null);
+    }
+    body {
         _acts[act.id] = act;
+
+        if(_isRunning){
+            act.onStart(this);
+            act.onAttach();
+        }
     }
 
 
@@ -82,7 +148,7 @@ class SDLApplication(alias initializeFunc = defaultInitializeFunc)
     }
 
 
-    final
+    final override
     SDLActivity getActivity(string id)
     {
         return _acts.get(id, null);
@@ -100,22 +166,60 @@ class SDLApplication(alias initializeFunc = defaultInitializeFunc)
     }
 
 
-    void destroyActivity(string id)
+    override
+    void attachActivity(string id)
     {
-        auto act = getActivity(id);
-        act.onDestroy();
-        _acts.remove(id);
+        auto act = _detachedActs[id];
+        act.onAttach();
+        _detachedActs.remove(id);
+        _acts[id] = act;
     }
 
 
+    override
+    void detachActivity(string id)
+    {
+        auto act = _acts[id];
+        act.onDetach();
+        _acts.remove(id);
+        _detachedActs[id] = act;
+    }
+
+
+    override
+    void destroyActivity(string id)
+    {
+        if(auto p = id in _acts){
+            auto act = *p;
+            act.onDetach();
+            act.onDestroy();
+            _acts.remove(id);
+        }else if(auto p = id in _detachedActs){
+            auto act = *p;
+            act.onDestroy();
+            _detachedActs.remove(id);
+        }else
+            enforce(0);
+    }
+
+
+    override
     void run()
     {
-        auto wc = WebCore.instance;
-
         _isRunning = true;
+
+        auto wc = WebCore.instance;
+        wc.update();
+
+        foreach(k, a; _acts){
+            a.onStart(this);
+            a.onAttach();
+        }
+
         while(!_isShouldQuit)
         {
             wc.update();
+
             {
                 SDL_Event event;
                 while(SDL_PollEvent(&event)){
@@ -138,6 +242,12 @@ class SDLApplication(alias initializeFunc = defaultInitializeFunc)
     }
 
 
+    override
+    @property
+    bool isRunning() { return _isRunning; }
+
+
+    override
     void shutdown()
     {
         if(!_isShouldQuit && _isRunning)
@@ -146,8 +256,8 @@ class SDLApplication(alias initializeFunc = defaultInitializeFunc)
             _isRunning = false;
             _isShouldQuit = true;
 
-            foreach(k, activity; _acts)
-                activity.onDestroy();
+            this.onDestroy();
+            super.shutdown();
 
             SDL_Quit();
             WebCore.shutdown();
@@ -174,8 +284,10 @@ class SDLApplication(alias initializeFunc = defaultInitializeFunc)
 
   private:
     SDLActivity[string] _acts;
+    SDLActivity[string] _detachedActs;
     bool _isRunning;
     bool _isShouldQuit;
+    ubyte[][string] _savedData;
 
     static SDLApplication _instance;
 }

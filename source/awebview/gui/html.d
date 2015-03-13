@@ -3,6 +3,7 @@ module awebview.gui.html;
 import carbon.utils;
 import awebview.gui.activity;
 import awebview.gui.methodhandler;
+import awebview.gui.application;
 
 import awebview.wrapper.jsobject,
        awebview.wrapper.jsvalue,
@@ -52,7 +53,27 @@ abstract class HTMLPage
     }
 
 
-    string id() const @property { return _id; }
+    final
+    @property
+    inout(Activity) activity() inout pure nothrow @safe @nogc
+    {
+        return _activity;
+    }
+
+
+    final
+    @property
+    inout(Application) application() inout pure nothrow @safe @nogc
+    {
+        if(_activity is null)
+            return null;
+        else
+            return _activity.application;
+    }
+
+
+    final
+    string id() const pure nothrow @safe @nogc @property { return _id; }
 
 
     string html() const @property;
@@ -61,31 +82,20 @@ abstract class HTMLPage
     inout(HTMLElement[string]) elements() inout @property;
 
 
-    void onUpdate() {}
-
-
     void onStart(Activity activity)
     {
         _activity = activity;
-        foreach(key, elem; elements)
-            elem.onStart(activity);
+        foreach(key, ref elem; elements.dup){
+            elem.onStart(this);
+        }
     }
-
-
-    void onDestroy() {}
 
 
     void onAttach(bool isInitPhase)
     {
+        _activity = activity;
         foreach(key, elem; elements)
             elem.onAttach(isInitPhase);
-    }
-
-
-    void onDetach()
-    {
-        foreach(key, elem; elements)
-            elem.onDetach();
     }
 
 
@@ -96,10 +106,20 @@ abstract class HTMLPage
     }
 
 
-    @property
-    inout(Activity) activity() inout
+    void onUpdate() {}
+
+
+    void onDetach()
     {
-        return _activity;
+        foreach(key, elem; elements)
+            elem.onDetach();
+    }
+
+
+    void onDestroy()
+    {
+        foreach(k, elem; elements)
+            elem.onDestroy();
     }
 
 
@@ -167,8 +187,36 @@ class HTMLElement
     }
 
 
+    final
     @property
-    bool hasObject() pure nothrow @safe @nogc
+    inout(HTMLPage) page() inout pure nothrow @safe @nogc { return _page; }
+
+
+    final
+    @property
+    inout(Activity) activity() inout pure nothrow @safe @nogc
+    {
+        if(_page is null)
+            return null;
+        else
+            return _page.activity;
+    }
+
+
+    final
+    @property
+    inout(Application) application() inout pure nothrow @safe @nogc
+    {
+        if(this.activity is null)
+            return null;
+        else
+            return this.activity.application;
+    }
+
+
+    final
+    @property
+    bool hasObject() const pure nothrow @safe @nogc
     {
         return _hasObj;
     }
@@ -184,41 +232,38 @@ class HTMLElement
     }
 
 
-    final @property bool hasId() const { return _id !is null; }
+    final @property bool hasId() const pure nothrow @safe @nogc { return _id !is null; }
 
 
-    final @property string id() const { return _id; }
+    final @property string id() const pure nothrow @safe @nogc { return _id; }
 
 
     @property string html() const { return ""; }
 
 
-    @property pure nothrow @safe @nogc
-    inout(Activity) activity() inout
+    void onStart(HTMLPage page)
     {
-        return _activity;
-    }
+        _page = page;
 
-
-    void onStart(Activity activity)
-    {
-        _activity = activity;
-
-        if(this.hasObject){
+        if(this.hasObject && !_v.isObject){
             _v = activity.createObject(_id);
-            assert(_v.isObject);
         }
     }
 
 
     void onDestroy()
     {
-        _activity = null;
+        _page = null;
         _v = JSValue.null_;
     }
 
 
-    void onAttach(bool isInit) {}
+    void onAttach(bool isInit)
+    {
+        if(isInit && this.hasObject && !_v.isObject){
+            _v = activity.createObject(_id);
+        }
+    }
 
 
     void onDetach() {}
@@ -320,7 +365,7 @@ class HTMLElement
     string _id;
     bool _hasObj;
     JSValue _v;
-    Activity _activity;
+    HTMLPage _page;
     JSValue[string] _staticProperties;
 }
 
@@ -489,10 +534,10 @@ if(is(Element : HTMLElement) && names.length >= 1)
     mixin(genDeclMethods);
 
     override
-    void onStart(Activity activity)
+    void onStart(HTMLPage page)
     {
-        super.onStart(activity);
-        activity.methodHandler.set(this);
+        super.onStart(page);
+        this.activity.methodHandler.set(this);
     }
 
 

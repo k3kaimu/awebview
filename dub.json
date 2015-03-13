@@ -52,5 +52,6 @@
     "dependencies": {
         "carbon": "~>1.1.0",
         "derelict-sdl2": "~>1.9.4",
+        "msgpack-d": "~>0.9.6",
     }
 }

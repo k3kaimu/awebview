@@ -25,7 +25,7 @@ import std.file : exists;
 
 void main()
 {
-    auto app = SDLApplication!().instance;
+    auto app = SDLApplication.instance;
 
     auto pref = WebPreferences.recommended;
     if(exists("style.css"))
@@ -44,6 +44,4 @@ void main()
         return activity;
     });
     app.run();
-
-    writeln("end");
 }
