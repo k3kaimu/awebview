@@ -53,13 +53,11 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
             _txt_timer = txt_timer;
             return txt_timer;
         }();
-        this ~= new IDOnlyElement("progress_bar");
         this ~= {
             auto txt_secs = new InputText!()("txt_secs");
             _txt_secs = txt_secs;
             return txt_secs;
         }();
-        this ~= new IDOnlyElement("msc_start");
         this ~= {
             auto btn_start = new InputButton!(["class" : "btn btn-lg btn-primary"])("btn_start");
             btn_start.onClick.connect!"onTimerStart"(this);
@@ -73,9 +71,6 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         this ~= {
             auto radio_fb_btn = new GenericButton!(import(`radio_fb_btn.html`))("radio_fb_btn");
             radio_fb_btn.onClick.connect!"onChangeDirection"(this);
-
-            this ~= new IDOnlyElement("radio_fb_btn_f");
-            this ~= new IDOnlyElement("radio_fb_btn_b");
             return radio_fb_btn;
         }();
     }
@@ -107,7 +102,7 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         else
             pg = 100 * ((diff.minutes*60 + diff.seconds) * 1000 + diff.msecs) / (_totalSecs * 1000.0L);
 
-        this.elements["progress_bar"]["style.width"] = format("%f%%", pg);
+        this.activity[$("#progress_bar")]["style.width"] = format("%f%%", pg);
     }
 
 
@@ -117,7 +112,7 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         _start = Clock.currTime;
         reloadTotalSeconds();
         this.elements["btn_start"]["disabled"] = true;
-        this.elements["msc_start"].invoke("play");
+        this.activity[$("#msc_start")].invoke("play");
     }
 
 
@@ -137,8 +132,8 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         assert(args[0].isString);
 
         _isForward = "forward"w == args[0].get!(WebString).data;
-        this.elements["radio_fb_btn_f"]["disabled"] = _isForward;
-        this.elements["radio_fb_btn_b"]["disabled"] = !_isForward;
+        this.activity[$("#radio_fb_btn_f")]["disabled"] = _isForward;
+        this.activity[$("#radio_fb_btn_b")]["disabled"] = !_isForward;
     }
 
 
@@ -159,8 +154,8 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         this.elements["btn_start"]["value"] = "Start";
         this.elements["btn_reset"]["value"] = "Reset";
         this.elements["txt_secs"]["value"] = _totalSecs;
-        this.elements["radio_fb_btn_f"]["disabled"] = _isForward;
-        this.elements["radio_fb_btn_b"]["disabled"] = !_isForward;
+        this.activity[$("#radio_fb_btn_f")]["disabled"] = _isForward;
+        this.activity[$("#radio_fb_btn_b")]["disabled"] = !_isForward;
     }
 
   private:

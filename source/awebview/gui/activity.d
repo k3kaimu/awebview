@@ -179,6 +179,35 @@ class Activity
     }
 
 
+    final
+    auto opIndex(Dollar.QuerySelector dollar)
+    {
+        return .querySelector(this, dollar.selector);
+    }
+
+
+    final
+    Dollar opDollar() pure nothrow @safe @nogc { return Dollar.init; }
+
+
+    static struct Dollar
+    {
+        static struct QuerySelector
+        {
+            string selector;
+        }
+
+
+        QuerySelector q(string str) pure nothrow @safe @nogc
+        {
+            return QuerySelector(str);
+        }
+
+
+        alias opCall = q;
+    }
+
+
     void load(string id)
     {
         immutable bool isStarted = this.application !is null && this.application.isRunning;

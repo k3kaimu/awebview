@@ -764,6 +764,24 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
         }
 
 
+        void invoke(T...)(string name, auto ref T args)
+        {
+          static if(T.length == 0)
+            activity.evalJS(mixin(Lstr!
+                q{%[_qs%].%[name%]();}
+            ));
+          else{
+            auto carrier = activity.carrierObject;
+            foreach(i, ref e; args)
+                carrier.setProperty(format("value%s", i), JSValue(e));
+
+            activity.evalJS(mixin(Lstr!
+                q{%[_qs%].%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
+            ));
+          }
+        }
+
+
         Activity activity;
       private:
         string _qs;
@@ -771,6 +789,6 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
 
     Result res;
     res.activity = activity;
-    res._qs = mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[cssSelector%])});
+    res._qs = mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])});
     return res;
 }
