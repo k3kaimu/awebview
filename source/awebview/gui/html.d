@@ -339,6 +339,89 @@ class HTMLElement
     }
 
 
+    /**
+    .innerHTML
+    */
+    void innerHTML(string html)
+    in{
+        assert(this.hasId);
+    }
+    body{
+        auto ca = activity.carrierObject;
+        ca.setProperty("value", JSValue(html));
+        activity.evalJS(mixin(Lstr!
+            q{document.getElementById("%[id%]").innerHTML = _carrierObject_.value; }));
+    }
+
+
+    /**
+    See also: HTML.insertAdjacentHTML
+    */
+    void insertAdjacentHTML(string pos, string html)
+    in{
+
+    }
+    body{
+        auto ca = activity.carrierObject;
+        ca.setProperty("value0", JSValue(pos));
+        ca.setProperty("value1", JSValue(html));
+        activity.evalJS(mixin(Lstr!
+            q{document.getElementById("%[id%]").insertAdjacentHTML(_carrierObject_.value0, _carrierObject_.value1);}));
+    }
+
+
+    /**
+    append html to this, which is block element.
+    See also: jQuery.append
+    */
+    void append(string html)
+    in{
+        assert(this.hasId);
+    }
+    body{
+        this.insertAdjacentHTML("beforeend", html);
+    }
+
+
+    /**
+    prepend html to this which is block element.
+    See also: jQuery.prepend
+    */
+    void prepend(string html)
+    in{
+        assert(this.hasId);
+    }
+    body{
+        this.insertAdjacentHTML("afterbegin", html);
+    }
+
+
+    /**
+    insert html after this.
+    See also: jQuery.insertAfter
+    */
+    void insertAfter(string html)
+    in{
+        assert(this.hasId);
+    }
+    body{
+        this.insertAdjacentHTML("afterend", html);
+    }
+
+
+    /**
+    insert html before this.
+    See also: jQuery.insertBefore
+    */
+    void insertBefore(string html)
+    in{
+        assert(this.hasId);
+    }
+    body{
+        this.insertAdjacentHTML("beforebegin", html);
+    }
+
+
     void invoke(T...)(string name, auto ref T args)
     in{
         assert(this.hasId);
@@ -557,3 +640,137 @@ if(is(Element : HTMLElement) && names.length >= 1)
 
 
 alias DeclDefSignals(Element, names...) = DefineSignals!(DefineSignals!(Element, names), names);
+
+
+
+/**
+Selectors API
+*/
+alias querySelector = querySelectorImpl!false;
+
+
+/// ditto
+alias querySelectorAll = querySelectorImpl!true;
+
+
+auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
+{
+    static struct Result
+    {
+        void opIndexAssign(T)(T value, string name)
+        if(is(typeof(JSValue(value)) : JSValue))
+        {
+            this.opIndexAssign(JSValue(value), name);
+        }
+
+
+        void opIndexAssign(JSValue value, string name)
+        {
+            if(value.isBoolean){
+                if(value.get!bool)
+                    activity.runJS(mixin(Lstr!
+                        q{%[_qs%].%[name%] = true;}
+                    ));
+                else
+                    activity.runJS(mixin(Lstr!
+                        q{%[_qs%].%[name%] = false;}
+                    ));
+            }else{
+                auto carrier = activity.carrierObject;
+                carrier.setProperty("value", value);
+
+                activity.runJS(mixin(Lstr!
+                    q{%[_qs%].%[name%] = _carrierObject_.value;}
+                ));
+            }
+        }
+
+
+        JSValue opIndex(string name)
+        {
+            JSValue jv = activity.evalJS(mixin(Lstr!
+                q{%[_qs%].%[name%];}
+            ));
+
+            return jv;
+        }
+
+
+        /**
+        .innerHTML
+        */
+        void innerHTML(string html)
+        {
+            auto ca = activity.carrierObject;
+            ca.setProperty("value", JSValue(html));
+            activity.evalJS(mixin(Lstr!
+                q{%[_qs%].innerHTML = _carrierObject_.value; }));
+        }
+
+
+        /**
+        See also: HTML.insertAdjacentHTML
+        */
+        void insertAdjacentHTML(string pos, string html)
+        in{
+
+        }
+        body{
+            auto ca = activity.carrierObject;
+            ca.setProperty("value0", JSValue(pos));
+            ca.setProperty("value1", JSValue(html));
+            activity.evalJS(mixin(Lstr!
+                q{%[_qs%].insertAdjacentHTML(_carrierObject_.value0, _carrierObject_.value1);}));
+        }
+
+
+        /**
+        append html to this, which is block element.
+        See also: jQuery.append
+        */
+        void append(string html)
+        {
+            this.insertAdjacentHTML("beforeend", html);
+        }
+
+
+        /**
+        prepend html to this which is block element.
+        See also: jQuery.prepend
+        */
+        void prepend(string html)
+        {
+            this.insertAdjacentHTML("afterbegin", html);
+        }
+
+
+        /**
+        insert html after this.
+        See also: jQuery.insertAfter
+        */
+        void insertAfter(string html)
+        {
+            this.insertAdjacentHTML("afterend", html);
+        }
+
+
+        /**
+        insert html before this.
+        See also: jQuery.insertBefore
+        */
+        void insertBefore(string html)
+        {
+            this.insertAdjacentHTML("beforebegin", html);
+        }
+
+
+        Activity activity;
+      private:
+        string _qs;
+    }
+
+    Result res;
+    res.activity = activity;
+    res._qs = mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[cssSelector%])});
+    return res;
+}

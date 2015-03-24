@@ -137,24 +137,24 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
 
     void rerenderingHeader()
     {
-        auto app = appender!wstring();
+        auto app = appender!string();
         app.formattedWrite("%-(<th>%s</th>%|%)", _ths.map!encodeComponent());
-        activity.carrierObject.setProperty("value", JSValue(app.data));
-        activity.runJS(mixin(Lstr!q{$("#%[id%] > thead > tr").html(_carrierObject_.value);}));
+
+        activity.querySelector(mixin(Lstr!"#%[id%] > thead > tr")).innerHTML = app.data;
     }
 
 
     void rerenderingBody()
     {
-        auto app = appender!wstring();
+        auto app = appender!string();
         foreach_reverse(e; _tds){
             try
                 appendTR(app, e[0], e[1], e[2]);
             catch(UTFException ex)
                 appendTR(app, e[0], e[1], ex.to!string);
         }
-        activity.carrierObject.setProperty("value", JSValue(app.data));
-        activity.runJS(mixin(Lstr!q{$("#%[id%] > tbody").html(_carrierObject_.value);}));
+
+        activity.querySelector(mixin(Lstr!q{"#%[id%] > tbody"})).innerHTML = app.data;
     }
 
 
@@ -163,11 +163,10 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
         //import std.stdio;
         _tds ~= [imageURL, username, tweet];
         if(this.activity !is null){
-            auto app = appender!wstring();
+            auto app = appender!string();
             appendTR(app, imageURL, username, tweet);
-            //writeln(app.data);
-            activity.carrierObject.setProperty("value", JSValue(app.data));
-            activity.runJS(mixin(Lstr!q{$("#%[id%] > tbody").prepend(_carrierObject_.value);}));
+
+            activity.querySelector(mixin(Lstr!q{"#%[id%] > tbody"})).prepend(app.data);
         }
     }
 
