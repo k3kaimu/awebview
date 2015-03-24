@@ -1,5 +1,7 @@
 module awebview.gui.activity;
 
+import carbon.utils;
+
 import awebview.wrapper.websession,
        awebview.wrapper.webview,
        awebview.wrapper.webcore,
@@ -44,7 +46,7 @@ class Activity
     {
         _app = app;
 
-        foreach(k, p; _pages)
+        foreach(k, p; _pages.maybeModified)
             p.page.onStart(this);
 
         if(_nowPage !is null){
@@ -75,7 +77,7 @@ class Activity
 
     void onDestroy()
     {
-        foreach(k, p; _pages){
+        foreach(k, p; _pages.maybeModified){
             p.page.onDetach();
             p.page.onDestroy();
         }

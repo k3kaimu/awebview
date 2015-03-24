@@ -35,13 +35,18 @@ void main()
         pref.userScript = std.file.readText("script.js");
 
     app.createActivity(pref, delegate(WebSession session){
-        // 画面の作成
+        // create window-view
         auto activity = new SDLActivity("MainActivity", 600, 600, "Twitter Client by D(awebview HTML GUI)", session);
-        activity ~= new OAuthPage();
-        activity ~= new MainPage();
 
+        // add pages to activity
+        activity ~= new OAuthPage();  // .id == "oauthPage"
+        activity ~= new MainPage();   // .id == "mainPage"
+
+        // load MainPage as initial page()
         activity.load("mainPage");
         return activity;
     });
+
+    // run main loop
     app.run();
 }

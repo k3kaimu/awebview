@@ -8,6 +8,7 @@ import awebview.wrapper.webcore;
 import awebview.gui.activity;
 import derelict.sdl2.sdl;
 import msgpack;
+import carbon.utils;
 
 import core.thread;
 
@@ -83,13 +84,21 @@ class SDLApplication : Application
     override
     void onDestroy()
     {
-        foreach(id, activity; _acts){
-            activity.onDetach();
-            activity.onDestroy();
+        while(_acts.length){
+            foreach(id, activity; _acts.maybeModified){
+                activity.onDetach();
+                activity.onDestroy();
+                if(_acts[id] is activity)
+                    _acts.remove(id);
+            }
         }
 
-        foreach(id, activity; _detachedActs){
-            activity.onDestroy();
+        while(_detachedActs.length){
+            foreach(id, activity; _detachedActs.maybeModified){
+                activity.onDestroy();
+                if(_detachedActs[id] is activity)
+                    _detachedActs.remove(id);
+            }
         }
     }
 
@@ -211,7 +220,7 @@ class SDLApplication : Application
         auto wc = WebCore.instance;
         wc.update();
 
-        foreach(k, a; _acts){
+        foreach(k, a; _acts.maybeModified){
             a.onStart(this);
             a.onAttach();
         }
@@ -227,7 +236,7 @@ class SDLApplication : Application
                 }
             }
 
-            foreach(k, a; _acts){
+            foreach(k, a; _acts.maybeModified){
                 a.onUpdate();
 
                 if(a.isShouldClosed)
@@ -267,7 +276,7 @@ class SDLApplication : Application
 
     void onSDLEvent(const SDL_Event* event)
     {
-        foreach(k, a; _acts)
+        foreach(k, a; _acts.maybeModified)
             a.onSDLEvent(event);
 
         switch(event.type)

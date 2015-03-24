@@ -85,7 +85,7 @@ abstract class HTMLPage
     void onStart(Activity activity)
     {
         _activity = activity;
-        foreach(key, ref elem; elements.dup){
+        foreach(key, elem; elements.maybeModified){
             elem.onStart(this);
         }
     }
@@ -94,14 +94,14 @@ abstract class HTMLPage
     void onAttach(bool isInitPhase)
     {
         _activity = activity;
-        foreach(key, elem; elements)
+        foreach(key, elem; elements.maybeModified)
             elem.onAttach(isInitPhase);
     }
 
 
     void onLoad(bool isInit)
     {
-        foreach(key, elem; elements)
+        foreach(key, elem; elements.maybeModified)
             elem.onLoad(isInit);
     }
 
@@ -111,14 +111,14 @@ abstract class HTMLPage
 
     void onDetach()
     {
-        foreach(key, elem; elements)
+        foreach(key, elem; elements.maybeModified)
             elem.onDetach();
     }
 
 
     void onDestroy()
     {
-        foreach(k, elem; elements)
+        foreach(k, elem; elements.maybeModified)
             elem.onDestroy();
     }
 
@@ -171,7 +171,6 @@ class TemplateHTMLPage(string form) : HTMLPage
     HTMLElement[string] _elems;
     Variant[string] _exts;
 }
-
 
 
 class HTMLElement
