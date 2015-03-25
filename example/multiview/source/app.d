@@ -45,6 +45,20 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
             btn.onClick.connect!"onClickCloseAll"(this);
             return btn;
         }();
+
+        this ~= (){
+            auto btn = new InputButton!()("show_all");
+            btn.staticSet("value", "Show all windows");
+            btn.onClick.connect!"onClickShowAll"(this);
+            return btn;
+        }();
+
+        this ~= (){
+            auto btn = new InputButton!()("hide_all");
+            btn.staticSet("value", "Hide all windows");
+            btn.onClick.connect!"onClickHideAll"(this);
+            return btn;
+        }();
     }
 
 
@@ -73,6 +87,20 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
         foreach(k, e; _children.maybeModified){
             e.close();
         }
+    }
+
+
+    void onClickShowAll(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
+    {
+        foreach(k; _children.byKey)
+            application.attachActivity(k);
+    }
+
+
+    void onClickHideAll(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
+    {
+        foreach(k; _children.byKey)
+            application.detachActivity(k);
     }
 
 

@@ -247,6 +247,17 @@ class SDLApplication : Application
                     break LInf;
             }
 
+            if(_acts.length == 0)
+                shutdown();
+
+            foreach(k, a; _detachedActs.maybeModified){
+                if(a.isShouldClosed)
+                    destroyActivity(a.id);
+
+                if(_isShouldQuit)
+                    break LInf;
+            }
+
             Thread.sleep(dur!"msecs"(10));
             wc.update();
         }
