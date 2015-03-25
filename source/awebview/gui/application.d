@@ -225,14 +225,15 @@ class SDLApplication : Application
             a.onAttach();
         }
 
+      LInf:
         while(!_isShouldQuit)
         {
-            wc.update();
-
             {
                 SDL_Event event;
                 while(SDL_PollEvent(&event)){
                     onSDLEvent(&event);
+                    if(_isShouldQuit)
+                        break LInf;
                 }
             }
 
@@ -241,9 +242,13 @@ class SDLApplication : Application
 
                 if(a.isShouldClosed)
                     destroyActivity(a.id);
+
+                if(_isShouldQuit)
+                    break LInf;
             }
 
             Thread.sleep(dur!"msecs"(10));
+            wc.update();
         }
         _isRunning = false;
 

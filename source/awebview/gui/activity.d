@@ -79,6 +79,13 @@ class Activity
 
 
     final
+    void close()
+    {
+        _isShouldClosed = true;
+    }
+
+
+    final
     @property
     bool isAttached() const pure nothrow @safe @nogc { return _isAttached; }
 
@@ -334,7 +341,8 @@ class Activity
     }
 
 
-    bool isShouldClosed() { return false; }
+    @property
+    bool isShouldClosed() { return _isShouldClosed; }
 
 
   private:
@@ -347,6 +355,7 @@ class Activity
     MethodHandler _methodHandler;
     JSValue[string] _objects;
     bool _isAttached;
+    bool _isShouldClosed;
 
     struct PageType { HTMLPage page; bool wasLoaded; }
     PageType[string] _pages;
@@ -436,14 +445,6 @@ class SDLActivity : Activity
     }
 
 
-    override
-    @property
-    bool isShouldClosed()
-    {
-        return false;
-    }
-
-
     void onSDLEvent(const SDL_Event* event)
     {
         if(event.type == SDL_WINDOWEVENT
@@ -458,7 +459,7 @@ class SDLActivity : Activity
         && event.window.event == SDL_WINDOWEVENT_CLOSE
         && event.window.windowID == this.windowID)
         {
-            this.onDestroy();
+            this.close();
             return;
         }
     }

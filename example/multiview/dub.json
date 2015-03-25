@@ -1,5 +1,5 @@
 {
-  "name": "hello",
+  "name": "multiview",
   "description": "A minimal D application.",
   "copyright": "Copyright © 2015, k3kaimu",
   "authors": ["k3kaimu"],
@@ -11,6 +11,7 @@
     {
       "name": "application",
       "targetType": "executable",
+      "lflags-windows-x86-dmd": ["-L/exet:nt/su:windows"],
       "preGenerateCommands":[
         "dub generate --config=copyCommand visuald",
         "dub generate --config=postCopyCommand visuald"

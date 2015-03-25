@@ -13,7 +13,7 @@ import std.variant;
 
 import std.array : appender;
 import std.format : formattedWrite;
-import std.algorithm : forward;
+import std.functional : forward;
 import std.conv : to;
 
 public import carbon.event : FiredContext;
@@ -485,8 +485,6 @@ if(is(Element : HTMLElement))
 {
     this(T...)(auto ref T args)
     {
-        import std.algorithm : forward;
-
       static if(is(typeof(super(forward!args[0 .. $-1]))) &&
                 is(typeof(args[$-1]) : Variant[string]))
       {

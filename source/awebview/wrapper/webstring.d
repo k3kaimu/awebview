@@ -344,7 +344,7 @@ struct WebStringCpp
         assert(str.length <= uint.max);
     }
     body{
-        WebStringMember.ctor(this.cppObj!false, str.ptr, cast(uint)str.length);
+        WebStringMember.ctor(this.cppObj!false, cast(const(ushort)*)str.ptr, cast(uint)str.length);
     }
 
 
@@ -426,7 +426,7 @@ struct WebStringCpp
 
     const(wchar)* ptr() const nothrow @property @nogc
     {
-        return WebStringMember.data(this.cppObj);
+        return cast(const(wchar)*)WebStringMember.data(this.cppObj);
     }
 
 

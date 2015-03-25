@@ -140,7 +140,7 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
         auto app = appender!string();
         app.formattedWrite("%-(<th>%s</th>%|%)", _ths.map!encodeComponent());
 
-        activity.querySelector(mixin(Lstr!"#%[id%] > thead > tr")).innerHTML = app.data;
+        activity[$(mixin(Lstr!"#%[id%] > thead > tr"))].innerHTML = app.data;
     }
 
 
@@ -154,19 +154,18 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
                 appendTR(app, e[0], e[1], ex.to!string);
         }
 
-        activity.querySelector(mixin(Lstr!q{"#%[id%] > tbody"})).innerHTML = app.data;
+        activity[$(mixin(Lstr!"#%[id%] > tbody"))].innerHTML = app.data;
     }
 
 
     void addTweet(string imageURL, string username, string tweet)
     {
-        //import std.stdio;
         _tds ~= [imageURL, username, tweet];
         if(this.activity !is null){
             auto app = appender!string();
             appendTR(app, imageURL, username, tweet);
 
-            activity.querySelector(mixin(Lstr!q{"#%[id%] > tbody"})).prepend(app.data);
+            activity[$(mixin(Lstr!"#%[id%] > tbody"))].prepend(app.data);
         }
     }
 
