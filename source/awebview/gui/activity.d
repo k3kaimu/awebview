@@ -17,14 +17,6 @@ import awebview.gui.html,
 
 import std.exception;
 
-//version(Windows)
-//{
-//    import core.sys.windows.windows;
-//    extern(C) HWND glfwGetWin32Window(GLFWwindow* window);
-//}
-//else version(linux)
-//    extern(C) void* glfwGetX11Window(GLFWwindow* window);
-
 
 class Activity
 {
@@ -459,6 +451,15 @@ class SDLActivity : Activity
         && event.window.windowID == this.windowID)
         {
             this.resize(event.window.data1, event.window.data2);
+            return;
+        }
+
+        if(event.type == SDL_WINDOWEVENT
+        && event.window.event == SDL_WINDOWEVENT_CLOSE
+        && event.window.windowID == this.windowID)
+        {
+            this.onDestroy();
+            return;
         }
     }
 
