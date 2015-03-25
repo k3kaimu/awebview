@@ -92,15 +92,17 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
 
     void onClickShowAll(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
-        foreach(k; _children.byKey)
-            application.attachActivity(k);
+        foreach(k, e; _children.maybeModified)
+            if(e.isDetached)
+                application.attachActivity(k);
     }
 
 
     void onClickHideAll(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
-        foreach(k; _children.byKey)
-            application.detachActivity(k);
+        foreach(k, e; _children.maybeModified)
+            if(e.isAttached)
+                application.detachActivity(k);
     }
 
 

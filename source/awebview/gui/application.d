@@ -23,7 +23,12 @@ abstract class Application
     }
 
 
-    void onDestroy();
+    void onDestroy()
+    {
+        if(_savedData.length)
+            std.file.write(_savedFileName, pack(_savedData));
+    }
+
 
     final
     @property
@@ -40,11 +45,7 @@ abstract class Application
     void run();
     bool isRunning() @property;
 
-    void shutdown()
-    {
-        if(_savedData.length)
-            std.file.write(_savedFileName, pack(_savedData));
-    }
+    void shutdown();
 
   private:
     ubyte[][string] _savedData;
@@ -100,6 +101,9 @@ class SDLApplication : Application
                     _detachedActs.remove(id);
             }
         }
+
+
+        super.onDestroy();
     }
 
 
@@ -282,7 +286,6 @@ class SDLApplication : Application
             _isShouldQuit = true;
 
             this.onDestroy();
-            super.shutdown();
 
             SDL_Quit();
             WebCore.shutdown();
