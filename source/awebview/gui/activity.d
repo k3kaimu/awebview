@@ -197,13 +197,13 @@ class Activity
         }
 
 
-        QuerySelector q(string str) pure nothrow @safe @nogc
+        QuerySelector QS(string str) pure nothrow @safe @nogc
         {
             return QuerySelector(str);
         }
 
 
-        alias opCall = q;
+        alias opCall = QS;
     }
 
 

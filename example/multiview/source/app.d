@@ -34,28 +34,28 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
 
         this ~= (){
             auto btn = new InputButton!()("open_new");
-            btn.staticSet("value", "Open new window");
+            btn.staticProps["value"] = "Open new window";
             btn.onClick.connect!"onClickOpenWindow"(this);
             return btn;
         }();
 
         this ~= (){
             auto btn = new InputButton!()("close_all");
-            btn.staticSet("value", "Close all windows");
+            btn.staticProps["value"] = "Close all windows";
             btn.onClick.connect!"onClickCloseAll"(this);
             return btn;
         }();
 
         this ~= (){
             auto btn = new InputButton!()("show_all");
-            btn.staticSet("value", "Show all windows");
+            btn.staticProps["value"] = "Show all windows";
             btn.onClick.connect!"onClickShowAll"(this);
             return btn;
         }();
 
         this ~= (){
             auto btn = new InputButton!()("hide_all");
-            btn.staticSet("value", "Hide all windows");
+            btn.staticProps["value"] = "Hide all windows";
             btn.onClick.connect!"onClickHideAll"(this);
             return btn;
         }();
@@ -106,6 +106,16 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
     }
 
 
+    override
+    void onDestroy()
+    {
+        foreach(k, e; _children.maybeModified)
+            e.close();
+
+        super.onDestroy();
+    }
+
+
     final class ChildPage : TemplateHTMLPage!(import("child.html"))
     {
         this()
@@ -114,7 +124,7 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
 
             this ~= (){
                 auto btn = new InputButton!()("close_this");
-                btn.staticSet("value", "Close this window");
+                btn.staticProps["value"] = "Close this window";
                 btn.onClick.connect!"onClickCloseThis"(this);
                 return btn;
             }();

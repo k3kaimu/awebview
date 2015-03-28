@@ -82,6 +82,13 @@ abstract class HTMLPage
     inout(HTMLElement[string]) elements() inout @property;
 
 
+    final
+    inout(HTMLElement) opIndex(string id) inout
+    {
+        return this.elements[id];
+    }
+
+
     void onStart(Activity activity)
     {
         _activity = activity;
@@ -277,7 +284,39 @@ class HTMLElement
     }
 
 
-    void staticSet(T)(string name, T value)
+    final
+    @property
+    auto staticProps()
+    {
+        static struct Result
+        {
+            void opIndexAssign(T)(T value, string name)
+            if(is(typeof(JSValue(value)) : JSValue))
+            {
+                _elem.staticPropsSet(name, value);
+            }
+
+
+            void remove(string name)
+            {
+                _elem.staticPropsRemove(name);
+            }
+
+
+            bool opBinaryRight(string op : "in")(string name) inout
+            {
+                return _elem.inStaticProps(name);
+            }
+
+          private:
+            HTMLElement _elem;
+        }
+
+        return Result(this);
+    }
+
+
+    void staticPropsSet(T)(string name, T value)
     if(is(typeof(JSValue(value)) : JSValue))
     in{
         assert(this.hasId);
@@ -291,6 +330,20 @@ class HTMLElement
     }
 
 
+    final
+    void staticPropsRemove(string name)
+    {
+        _staticProperties.remove(name);
+    }
+
+
+    final
+    bool inStaticProps(string name) inout
+    {
+        return !(name !in _staticProperties);
+    }
+
+
     void opIndexAssign(T)(T value, string name)
     if(is(typeof(JSValue(value)) : JSValue))
     in{
@@ -301,6 +354,7 @@ class HTMLElement
     }
 
 
+    final
     void opIndexAssign(JSValue value, string name)
     in{
         assert(this.hasId);
@@ -326,6 +380,7 @@ class HTMLElement
     }
 
 
+    final
     JSValue opIndex(string name)
     in{
         assert(this.hasId);

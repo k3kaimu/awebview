@@ -36,7 +36,16 @@ abstract class Application
 
     void addActivity(Activity activity);
 
+    final
+    void opOpAssign(string op : "~")(Activity activity)
+    {
+        addActivity(activity);
+    }
+
     Activity getActivity(string id);
+
+    final
+    Activity opIndex(string id) { return getActivity(id); }
 
     void attachActivity(string id);
     void detachActivity(string id);
@@ -46,6 +55,7 @@ abstract class Application
     bool isRunning() @property;
 
     void shutdown();
+
 
   private:
     ubyte[][string] _savedData;
