@@ -1,0 +1,36 @@
+{
+  "name": "showcase",
+  "description": "A minimal D application.",
+  "copyright": "Copyright © 2015, k3kaimu",
+  "authors": ["k3kaimu"],
+  "dependencies": {
+    "awebview": { "path": "../../" },
+  },
+
+  "configurations": [
+    {
+      "name": "application",
+      "targetType": "executable",
+      "lflags-windows-x86-dmd": ["-L/exet:nt/su:windows"],
+      "preGenerateCommands":[
+        "dub generate --config=copyCommand visuald",
+        "dub generate --config=postCopyCommand visuald"
+      ],
+      "sourceFiles-windows-x86": ["awesomium4d_cw.obj"]
+    },
+
+    {
+      "name": "copyCommand",
+      "subConfigurations": {
+        "awebview": "copyCommand"
+      }
+    },
+
+    {
+      "name": "postCopyCommand",
+      "subConfigurations": {
+        "awebview": "postCopyCommand"
+      }
+    }
+  ],
+}
