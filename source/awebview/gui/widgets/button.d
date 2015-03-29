@@ -12,12 +12,22 @@ import carbon.event,
 public import carbon.event : FiredContext;
 
 
-abstract class Button : DeclareSignals!(HTMLElement, "onClick")
+interface IButton
+{
+    void onClick(WeakRef!(const(JSArrayCpp)));
+}
+
+
+abstract class Button : DeclareSignals!(HTMLElement, "onClick"), IButton
 {
     this(string id)
     {
         super(id, true);
     }
+
+
+    override
+    void onClick(WeakRef!(const(JSArrayCpp)) args) { assert(0); /* this method is not implemented */ }
 }
 
 

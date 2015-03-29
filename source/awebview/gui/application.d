@@ -6,6 +6,7 @@ import std.file;
 import awebview.wrapper.webcore;
 
 import awebview.gui.activity;
+import awebview.gui.html;
 import derelict.sdl2.sdl;
 import msgpack;
 import carbon.utils;
@@ -125,6 +126,17 @@ class SDLApplication : Application
         addActivity(act);
 
         return act;
+    }
+
+
+    SDLActivity createActivity(WebPreferences pref, HTMLPage page, string actID, uint width, uint height, string title)
+    {
+        return this.createActivity(pref, delegate(WebSession session){
+            auto act = new SDLActivity(actID, width, height, title, session);
+            act ~= page;
+            act.load(page);
+            return act;
+        });
     }
 
 

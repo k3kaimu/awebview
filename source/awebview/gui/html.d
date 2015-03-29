@@ -5,9 +5,7 @@ import awebview.gui.activity;
 import awebview.gui.methodhandler;
 import awebview.gui.application;
 
-import awebview.wrapper.jsobject,
-       awebview.wrapper.jsvalue,
-       awebview.wrapper.weakref;
+import awebview.wrapper;
 
 import std.variant;
 
@@ -133,6 +131,70 @@ abstract class HTMLPage
   private:
     Activity _activity;
     string _id;
+}
+
+
+class WebPage : HTMLPage
+{
+    this(string id, string url)
+    {
+        super(id);
+        _url = url;
+    }
+
+
+    @property
+    void location(string str)
+    {
+        if(activity){
+            _url = str;
+            activity.view.loadURL(WebURL(str));
+        }
+        else
+            _url = str;
+    }
+
+
+    @property
+    string location()
+    {
+        if(activity)
+            return activity.evalJS(q{document.location}).to!string;
+        else
+            return _url;
+    }
+
+
+    override
+    void onAttach(bool isInitPhase)
+    {
+        _bLoaded = false;
+    }
+
+
+    override
+    void onUpdate()
+    {
+        if(!_bLoaded)
+            this.location = _url;
+
+        _bLoaded = true;
+    }
+
+
+    override
+    inout(HTMLElement[string]) elements() inout @property { return null; }
+
+
+    override
+    string html() const
+    {
+        return `<html><head><title>Jump</title></head><body>Now loading...</body></html>`;
+    }
+
+  private:
+    string _url;
+    bool _bLoaded;
 }
 
 
@@ -844,4 +906,56 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
     res.activity = activity;
     res._qs = mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])});
     return res;
+}
+
+
+
+struct WebLibrary
+{
+    template loadJS(string src)
+    {
+        static this()
+        {
+            _defaultJS[src] = true;
+        }
+
+        void loadJS() {}
+    }
+
+
+    template loadCSS(string src)
+    {
+        static this()
+        {
+            _defaultCSS[src] = true;
+        }
+
+        void loadCSS() {}
+    }
+
+
+    @property
+    string js()
+    {
+        auto app = appender!string();
+        foreach(e, _; _defaultJS)
+            app.formattedWrite(`<script src='%s' type="text/javascript"></script>`, e);
+        return app.data;
+    }
+
+
+    @property
+    string css()
+    {
+        auto app = appender!string();
+        foreach(e, _; _defaultCSS)
+            app.formattedWrite(`<link href='%s' type="text/css" rel="stylesheet">`, e);
+        return app.data;
+    }
+
+
+  private:
+  static:
+    bool[string] _defaultJS;
+    bool[string] _defaultCSS;
 }

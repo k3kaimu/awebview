@@ -20,7 +20,7 @@ import std.exception;
 
 class Activity
 {
-    this(string id, size_t width, size_t height, WebView view)
+    this(string id, uint width, uint height, WebView view)
     {
         _id = id;
         _width = width;
@@ -49,26 +49,53 @@ class Activity
     }
 
 
+    void attach()
+    {
+        application.attachActivity(this.id);
+    }
+
+
     void onAttach()
     {
+        foreach(k, e; _children.maybeModified)
+            if(e.isDetached)
+                e.attach();
+
         _isAttached = true;
     }
 
 
     void onUpdate()
     {
+        foreach(k, e; _children.maybeModified)
+            if(e.isShouldClosed)
+                _children.remove(k);
+
         _nowPage.onUpdate();
+    }
+
+
+    void detach()
+    {
+        application.detachActivity(this.id);
     }
 
 
     void onDetach()
     {
+        foreach(k, e; _children.maybeModified)
+            if(e.isAttached)
+                e.detach();
+
         _isAttached = false;
     }
 
 
     void onDestroy()
     {
+        foreach(k, e; _children.maybeModified)
+            e.close();
+
         foreach(k, p; _pages.maybeModified){
             p.page.onDetach();
             p.page.onDestroy();
@@ -128,7 +155,7 @@ class Activity
 
 
     @property
-    void width(size_t w) nothrow @nogc
+    void width(uint w) nothrow @nogc
     {
         _width = w;
         this.resize(_width, _height);
@@ -143,14 +170,14 @@ class Activity
 
 
     @property
-    void height(size_t h) nothrow @nogc
+    void height(uint h) nothrow @nogc
     {
         _height = h;
         this.resize(_width, _height);
     }
 
 
-    void resize(size_t w, size_t h) nothrow @nogc
+    void resize(uint w, uint h) nothrow @nogc
     {
         this._view.resize(w, h);
     }
@@ -345,17 +372,33 @@ class Activity
     bool isShouldClosed() { return _isShouldClosed; }
 
 
+    void addChild(Activity act)
+    {
+        _children[act.id] = act;
+    }
+
+
+    final
+    @property
+    inout(Activity[string]) children() inout
+    {
+        return _children;
+    }
+
+
   private:
     Application _app;
     string _id;
-    size_t _width;
-    size_t _height;
+    uint _width;
+    uint _height;
     WebView _view;
     HTMLPage _nowPage;
     MethodHandler _methodHandler;
     JSValue[string] _objects;
     bool _isAttached;
     bool _isShouldClosed;
+
+    Activity[string] _children;
 
     struct PageType { HTMLPage page; bool wasLoaded; }
     PageType[string] _pages;

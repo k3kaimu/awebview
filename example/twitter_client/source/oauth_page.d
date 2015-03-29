@@ -7,6 +7,7 @@ import awebview.wrapper;
 import awebview.gui.html;
 import awebview.gui.widgets.button;
 import awebview.gui.widgets.text;
+import awebview.gui.application;
 
 import graphite.twitter;
 
@@ -27,7 +28,7 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         this ~= (){
             auto btn = new NormalButton("btnOpenBrowser");
             btn.onClick.connect!"onClickOpenBrowser"(this);
-            btn.staticSet("value", "ブラウザで開く");
+            btn.staticProps["value"] = "ブラウザで開く";
             return btn;
         }();
 
@@ -37,7 +38,7 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         this ~= (){
             auto btn = new NormalButton("btnDoOAuth");
             btn.onClick.connect!"onClickDoOAuth"(this);
-            btn.staticSet("value", "認証");
+            btn.staticProps["value"] = "認証";
             return btn;
         }();
     }
@@ -51,12 +52,35 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         if(_twTkn.isNull && cnsKey.length && cnsSct.length){
             auto cnsTkn = ConsumerToken(cnsKey, cnsSct);
             _twTkn = Twitter(Twitter.oauth.requestToken(cnsTkn, null));
-            browse(_twTkn.callAPI!"oauth.authorizeURL"());
+            //browse(_twTkn.callAPI!"oauth.authorizeURL"());
+            activity.addChild(application.to!SDLApplication.createActivity(WebPreferences.recommended,
+            new WebPage("oauthWebPage", _twTkn.callAPI!"oauth.authorizeURL"()), "oauthWebPageActivity", 600, 400, "Twitter OAuth"));
+        }
+    }
+
+
+    override
+    void onUpdate()
+    {
+        if(auto pTwiPage = "oauthWebPageActivity" in activity.children)
+        {
+            if((*pTwiPage).querySelectorAll("#code-desc")["length"].get!uint){
+                string str = (*pTwiPage)[$("code")]["innerHTML"].to!string;
+                elements["iptPinCode"].to!ITextOutput.text = str;
+                activity.children["oauthWebPageActivity"].close();
+                onClickDoOAuthImpl();
+            }
         }
     }
 
 
     void onClickDoOAuth(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
+    {
+        onClickDoOAuthImpl();
+    }
+
+
+    void onClickDoOAuthImpl()
     {
         auto pinCode = elements["iptPinCode"].to!ITextInput.text();
         if(!_twTkn.isNull && pinCode.length){
@@ -67,18 +91,6 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         elements["btnDoOAuth"]["disabled"] = true;
         activity.load("mainPage");
     }
-
-
-    //void onClickTweet(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
-    //{
-    //    auto txtArea = elements["iptTweetText"].to!(TextArea!());
-
-    //    auto tweetText = txtArea.text();
-    //    if(!_twTkn.isNull && tweetText.length){
-    //        _twTkn.callAPI!"statuses.update"(["status": tweetText]);
-    //        txtArea.text = "";
-    //    }
-    //}
 
 
     Nullable!Twitter token()

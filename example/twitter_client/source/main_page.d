@@ -49,7 +49,7 @@ class MainPage :  TemplateHTMLPage!(import(`main_page.html`))
         this ~= (){
             auto btn = new NormalButton(`btnTweet`);
             btn.onClick.connect!"onClickTweet"(this);
-            btn.staticSet("value", "ツイート");
+            btn.staticProps["value"] = "ツイート";
             return btn;
         }();
     }

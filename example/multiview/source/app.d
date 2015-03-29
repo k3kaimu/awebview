@@ -64,59 +64,52 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
 
     void onClickOpenWindow(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
-        application.to!SDLApplication.createActivity(WebPreferences.recommended,
-        delegate(WebSession session){
-            ++_n;
-            string strN = _n.to!string;
+        import std.string : format;
 
-            auto activity = new SDLActivity("MainActivity" ~ strN, 600, 400, strN ~ "!", session);
-            auto helloPage = new ChildPage();
+        ++_n;
+        immutable actId = format("MainActivity%s", _n),
+                  title = format("%s!", _n);
 
-            activity ~= helloPage;
-            activity.load("hello");
-
-            _children[activity.id] = activity;
-
-            return activity;
-        });
+        activity.addChild(application.to!SDLApplication.createActivity(
+                            WebPreferences.recommended,
+                            new ChildPage(), actId, 600, 400, title));
     }
 
 
     void onClickCloseAll(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
-        foreach(k, e; _children.maybeModified){
+        foreach(k, e; activity.children.maybeModified)
             e.close();
-        }
     }
 
 
     void onClickShowAll(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
-        foreach(k, e; _children.maybeModified)
+        foreach(k, e; activity.children.maybeModified)
             if(e.isDetached)
-                application.attachActivity(k);
+                e.attach();
     }
 
 
     void onClickHideAll(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
-        foreach(k, e; _children.maybeModified)
+        foreach(k, e; activity.children.maybeModified)
             if(e.isAttached)
-                application.detachActivity(k);
+                e.detach();
     }
 
 
     override
     void onDestroy()
     {
-        foreach(k, e; _children.maybeModified)
+        foreach(k, e; activity.children.maybeModified)
             e.close();
 
         super.onDestroy();
     }
 
 
-    final class ChildPage : TemplateHTMLPage!(import("child.html"))
+    static final class ChildPage : TemplateHTMLPage!(import("child.html"))
     {
         this()
         {
@@ -125,28 +118,13 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
             this ~= (){
                 auto btn = new InputButton!()("close_this");
                 btn.staticProps["value"] = "Close this window";
-                btn.onClick.connect!"onClickCloseThis"(this);
+                btn.onClick.strongConnect(delegate(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args){ activity.close(); });
                 return btn;
             }();
-        }
-
-
-        void onClickCloseThis(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
-        {
-            activity.close();
-        }
-
-
-        override
-        void onDestroy()
-        {
-            super.onDestroy();
-            _children.remove(this.activity.id);
         }
     }
 
 
   private:
     size_t _n;
-    SDLActivity[string] _children;
 }
