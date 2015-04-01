@@ -126,6 +126,19 @@ struct JSObject
     }
 
 
+    void opIndexAssign(T)(T v, string str)
+    if(is(typeof(JSValue(v)) == JSValue))
+    {
+        setProperty(str, v);
+    }
+
+
+    JSValue opIndex(string str)
+    {
+        return getProperty(str);
+    }
+
+
     void setPropertyAsync(in string str, in JSObject value) nothrow @nogc
     {
         setPropertyAsync(WebString(str), value);

@@ -19,7 +19,9 @@ void main()
       activity.load(mainPage);
       return activity;
     });
-    
+
+    app.initPopup(pref);
+
     // アプリケーションを走らせる
     app.run();
 }

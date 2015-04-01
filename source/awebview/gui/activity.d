@@ -8,6 +8,7 @@ import awebview.wrapper.websession,
        awebview.wrapper.webstring,
        awebview.wrapper.weburl,
        awebview.wrapper.weakref,
+       awebview.wrapper.sys,
        awebview.wrapper.cpp : NativeWindow;
 
 import awebview.gui.html,
@@ -15,7 +16,8 @@ import awebview.gui.html,
        awebview.gui.methodhandler,
        derelict.sdl2.sdl;
 
-import std.exception;
+import std.exception,
+       std.string;
 
 
 class Activity
@@ -155,7 +157,7 @@ class Activity
 
 
     @property
-    void width(uint w) nothrow @nogc
+    void width(uint w)
     {
         _width = w;
         this.resize(_width, _height);
@@ -170,14 +172,14 @@ class Activity
 
 
     @property
-    void height(uint h) nothrow @nogc
+    void height(uint h)
     {
         _height = h;
         this.resize(_width, _height);
     }
 
 
-    void resize(uint w, uint h) nothrow @nogc
+    void resize(uint w, uint h)
     {
         this._view.resize(w, h);
     }
@@ -281,6 +283,8 @@ class Activity
     {
         // save html to disk
         import std.path : buildPath;
+        import std.file;
+
         immutable htmlPath = buildPath(this.tempDir, this.id ~ nowPage.id ~ ".html");
         {
             import std.file : write;
@@ -290,6 +294,8 @@ class Activity
         _view.loadURL(WebURL(htmlPath));
         while(_view.isLoading)
             WebCore.instance.update();
+
+        //std.file.remove(htmlPath);
 
         _nowPage.onLoad(isInit);
     }
@@ -407,12 +413,12 @@ class Activity
 
 class SDLActivity : Activity
 {
-    this(string id, size_t width, size_t height, string title, WebSession session = null)
+    this(string id, size_t width, size_t height, string title, WebSession session = null, uint sdlFlags = SDL_WINDOW_RESIZABLE)
     {
         import std.string : toStringz;
         import std.exception : enforce;
 
-        _sdlWind = enforce(SDL_CreateWindow(toStringz(title), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN));
+        _sdlWind = enforce(SDL_CreateWindow(toStringz(title), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, sdlFlags | SDL_WINDOW_HIDDEN));
 
         auto view = WebCore.instance.createWebView(width, height, session, WebViewType.window);
 
@@ -512,4 +518,245 @@ class SDLActivity : Activity
     SDL_Window* _sdlWind;
 
     static SDLActivity[SDL_Window*] _winds;
+}
+
+
+version(Windows)
+{
+    import core.sys.windows.com;
+    import core.sys.windows.windows;
+
+    extern(Windows) nothrow export @nogc
+    {
+        LONG SetWindowLongW(HWND,int,LONG);
+        BOOL MoveWindow(
+              HWND hWnd,      // ウィンドウのハンドル
+              int X,          // 横方向の位置
+              int Y,          // 縦方向の位置
+              int nWidth,     // 幅
+              int nHeight,    // 高さ
+              BOOL bRepaint   // 再描画オプション
+            );
+    }
+
+    extern (C)
+    {
+        extern CLSID CLSID_TaskbarList;
+    }
+
+    extern(C)
+    {
+        extern IID IID_ITaskbarList;
+    }
+
+    extern(System)
+    interface ITaskbarList : IUnknown
+    {
+        HRESULT HrInit();
+        void unusedAddTab();
+        HRESULT DeleteTab(HWND hwnd);
+        HRESULT unusedActivateTab();
+        HRESULT unusedSetActivateAlt();
+    }
+
+    void deleteFromTaskbar(HWND hwnd)
+    {
+        ITaskbarList tbl;
+        CoCreateInstance(&CLSID_TaskbarList,
+            null,
+            CLSCTX_INPROC_SERVER,
+            &IID_ITaskbarList,
+            cast(void*)&tbl);
+        tbl.HrInit();
+        tbl.DeleteTab(hwnd);
+    }
+}
+
+
+class SDLBorderlessActivity : SDLActivity
+{
+    this(string id, size_t width, size_t height, string title, WebSession session = null, uint orSDLFlags = SDL_WINDOW_RESIZABLE)
+    {
+        uint flags = orSDLFlags | SDL_WINDOW_BORDERLESS;
+        super(id, width, height, title, session, flags);
+
+      version(Windows)
+      {
+        enum int GWL_STYLE = -16;
+        enum LONG WS_POPUP = 0x80000000;
+
+        /* see https://wiki.libsdl.org/SDL_SysWMinfo */
+        SDL_SysWMinfo wmi;
+        SDL_VERSION(&(wmi.version_));
+
+        if(SDL_GetWindowWMInfo(_sdlWind, &wmi))
+            SetWindowLongW(wmi.info.win.window, GWL_STYLE, WS_POPUP);
+      }
+    }
+
+
+    override
+    void resize(size_t w, size_t h)
+    {
+        super.resize(w, h);
+
+        SDL_SetWindowSize(this.sdlWindow, w, h);
+    }
+}
+
+
+class SDLPopupActivity : SDLBorderlessActivity
+{
+    this(size_t idx, WebSession session = null, uint orSDLFlags = SDL_WINDOW_RESIZABLE)
+    {
+        super(format("_PopupActivity%s_", idx), 0, 0, "", session, orSDLFlags);
+        _idx = idx;
+        _session = session;
+        _flags = orSDLFlags;
+
+      version(Windows)
+      {
+        /* see https://wiki.libsdl.org/SDL_SysWMinfo */
+        SDL_SysWMinfo wmi;
+        SDL_VERSION(&(wmi.version_));
+
+        if(SDL_GetWindowWMInfo(_sdlWind, &wmi))
+            deleteFromTaskbar(wmi.info.win.window);
+      }
+    }
+
+
+    void popup(HTMLPage page, SDLActivity activity, int x, int y)
+    {
+        _parent = activity;
+        SDL_SetWindowPosition(this.sdlWindow, x, y);
+        this.attach();
+        this.load(page);
+        SDL_RaiseWindow(this.sdlWindow);
+
+        _x = x;
+        _y = y;
+    }
+
+
+    void popup(HTMLPage page, SDLActivity activity)
+    {
+      version(Windows)
+      {
+        import core.sys.windows.windows;
+        POINT p;
+        GetCursorPos(&p);
+
+        popup(page, activity, p.x, p.y);
+      }
+      else
+      {
+        SDL_PumpEvents();
+        int dx, dy;
+        SDL_GetMouseState(&dx, &dy);
+
+        int x, y;
+        SDL_GetWindowPosition(_parent.sdlWindow, &x, &y);
+
+        x += dx;
+        y += dy;
+
+        popup(page, activity, x, y);
+      }
+    }
+
+
+    void popupChild(HTMLPage page, size_t relX, size_t relY)
+    {
+        if(_child is null){
+            _child = new SDLPopupActivity(_idx + 1, _session, _flags);
+            this.application.addActivity(_child);
+        }
+
+        _child.popup(page, this, _x + relX, _y + relY);
+    }
+
+
+    void popupChildRight(HTMLPage page, size_t relY)
+    {
+        popupChild(page, _w, relY);
+    }
+
+
+    void popupChildButtom(HTMLPage page, size_t relX)
+    {
+        popupChild(page, relX, _h);
+    }
+
+
+    override
+    void onDetach()
+    {
+        _x = 0;
+        _y = 0;
+        _w = 0;
+        _h = 0;
+        this.resize(0, 0);
+        _parent = null;
+
+        super.onDetach();
+    }
+
+
+    override
+    void onUpdate()
+    {
+        super.onUpdate();
+
+        uint sw = evalJS(q{document.documentElement.scrollWidth}).get!uint;
+        uint sh = evalJS(q{document.documentElement.scrollHeight}).get!uint;
+
+        if(_w != sw || _h != sh){
+            this.resize(sw, sh);
+            _w = sw;
+            _h = sh;
+        }
+
+        if(_parent.isDetached || !this.hasFocus){
+            this.detach();
+        }
+    }
+
+
+    @property
+    bool hasFocus()
+    {
+        if(_child)
+            return isActive(this.sdlWindow) || _child.hasFocus;
+        else
+            return isActive(this.sdlWindow);
+    }
+
+
+    override
+    void onSDLEvent(const SDL_Event* event)
+    {
+        // ignore resized by user
+        if(event.type == SDL_WINDOWEVENT
+        && event.window.event == SDL_WINDOWEVENT_RESIZED
+        && event.window.windowID == this.windowID)
+        {
+            this.resize(_w, _h);
+            return;
+        }
+
+        super.onSDLEvent(event);
+    }
+
+
+  private:
+    size_t _idx;
+    WebSession _session;
+    uint _flags;
+
+    uint _x, _y;
+    uint _w, _h;
+
+    SDLActivity _parent;
+    SDLPopupActivity _child;
 }

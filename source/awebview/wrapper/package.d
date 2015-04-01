@@ -15,6 +15,7 @@ public import awebview.wrapper.constants,
               awebview.wrapper.webstring,
               awebview.wrapper.webstringarray,
               awebview.wrapper.weburl,
-              awebview.wrapper.webview;
+              awebview.wrapper.webview,
+              awebview.wrapper.sys;
 
 public import awebview.wrapper.cpp : JSObjectType;

@@ -28,7 +28,7 @@ abstract class Checkbox : DeclareSignals!(HTMLElement, "onClick"), ICheckbox
 
 
 class InputCheckbox(alias attrs = null)
-: TemplateHTMLElement!(DefineSignals!(Button, "onClick"), `<input type="checkbox" id="%[id%]" onclick="%[id%].onClick()" ` ~ buildHTMLTagAttr(attrs) ~ `>`)
+: TemplateHTMLElement!(DefineSignals!(Button, "onClick"), `<input type="checkbox" id="%[id%]" ` ~ buildHTMLTagAttr(attrs) ~ `>`)
 {
     this(string id) { super(id); }
 

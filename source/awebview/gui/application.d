@@ -113,7 +113,6 @@ class SDLApplication : Application
             }
         }
 
-
         super.onDestroy();
     }
 
@@ -164,11 +163,41 @@ class SDLApplication : Application
     }
 
 
+    SDLPopupActivity initPopup(WebPreferences pref)
+    {
+        auto act = this.createActivity(pref, delegate(WebSession session){
+            return new SDLPopupActivity(0, session);
+        });
+        this.detachActivity(act.id);
+        _popupRoot = act;
+        return act;
+    }
+
+
     final
     @property
-    SDLActivity[string] activities() pure nothrow @safe @nogc
+    auto activities(this This)() pure nothrow @safe @nogc
     {
-        return _acts;
+        static struct Result{
+            auto opIndex(string id) { return _app.getActivity(id); }
+            auto opIndex(uint windowID) { return _app.getActivity(windowID); }
+            auto opIndex(SDL_Window* sdlWindow) { return _app.getActivity(sdlWindow); }
+
+            auto opBinaryRight(string op : "in")(string id)
+            {
+                if(auto p = id in _app._acts)
+                    return p;
+                else if(auto p = id in _app._detachedActs)
+                    return p;
+                else
+                    return null;
+            }
+
+          private:
+            This _app;
+        }
+
+        return Result(this);
     }
 
 
@@ -179,6 +208,10 @@ class SDLApplication : Application
             if(a.windowID == windowID)
                 return a;
 
+        foreach(k, a; _detachedActs)
+            if(a.windowID == windowID)
+                return a;
+
         return null;
     }
 
@@ -186,7 +219,7 @@ class SDLApplication : Application
     final override
     SDLActivity getActivity(string id)
     {
-        return _acts.get(id, null);
+        return _acts.get(id, _detachedActs.get(id, null));
     }
 
 
@@ -197,15 +230,30 @@ class SDLApplication : Application
             if(a.sdlWindow == sdlWind)
                 return a;
 
+        foreach(k, a; _detachedActs)
+            if(a.sdlWindow == sdlWind)
+                return a;
+
         return null;
+    }
+
+
+    final
+    @property
+    SDLPopupActivity popupActivity()
+    {
+        return _popupRoot;
     }
 
 
     override
     void attachActivity(string id)
     {
+        if(id in _acts)
+            return;
+
         auto act = _detachedActs[id];
-        act.onAttach();
+        if(_isRunning) act.onAttach();
         _detachedActs.remove(id);
         _acts[id] = act;
     }
@@ -214,8 +262,11 @@ class SDLApplication : Application
     override
     void detachActivity(string id)
     {
+        if(id in _detachedActs)
+            return;
+
         auto act = _acts[id];
-        act.onDetach();
+        if(_isRunning) act.onDetach();
         _acts.remove(id);
         _detachedActs[id] = act;
     }
@@ -249,6 +300,10 @@ class SDLApplication : Application
         foreach(k, a; _acts.maybeModified){
             a.onStart(this);
             a.onAttach();
+        }
+
+        foreach(k, a; _detachedActs.maybeModified){
+            a.onStart(this);
         }
 
       LInf:
@@ -335,6 +390,7 @@ class SDLApplication : Application
   private:
     SDLActivity[string] _acts;
     SDLActivity[string] _detachedActs;
+    SDLPopupActivity _popupRoot;
     bool _isRunning;
     bool _isShouldQuit;
     ubyte[][string] _savedData;

@@ -32,4 +32,4 @@ abstract class Button : DeclareSignals!(HTMLElement, "onClick"), IButton
 
 
 alias GenericButton(alias format) = TemplateHTMLElement!(DefineSignals!(Button, "onClick"), format);
-alias InputButton(alias attrs = null) = GenericButton!(`<input type="button" id="%[id%]" onclick="%[id%].onClick()" ` ~ buildHTMLTagAttr(attrs) ~ `>`);
+alias InputButton(alias attrs = null) = GenericButton!(`<input type="button" id="%[id%]" ` ~ buildHTMLTagAttr(attrs) ~ `>`);

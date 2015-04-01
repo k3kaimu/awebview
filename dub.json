@@ -7,7 +7,7 @@
 
     "importPaths": ["source"],
 
-    "libs-windows-x86-dmd": ["awesomium_omf", "stlp45dm_static"],
+    "libs-windows-x86-dmd": ["awesomium_omf", "stlp45dm_static", "ole32"],
 
     "libs-linux": ["awesomium-1-7", "stdc++"],
     "copyFiles-posix-x86_64": ["bin/linux64/awesomium_process"],

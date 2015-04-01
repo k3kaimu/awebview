@@ -19,7 +19,6 @@ import carbon.templates : Lstr;
 import carbon.utils : toLiteral;
 
 
-
 string buildHTMLTagAttr(in string[string] attrs)
 {
     auto app = appender!string();
@@ -90,6 +89,7 @@ abstract class HTMLPage
     void onStart(Activity activity)
     {
         _activity = activity;
+
         foreach(key, elem; elements.maybeModified){
             elem.onStart(this);
         }
@@ -738,7 +738,19 @@ if(is(Element : HTMLElement) && names.length >= 1)
     }
 
 
+    override
+    void onLoad(bool init)
+    {
+        super.onLoad(init);
+
+        if(init)
+            this.activity.runJS(genSettingEventHandlers(this.id));
+    }
+
+
   private:
+    bool _iniUpdate;
+
     static
     {
         string genDeclMethods()
@@ -750,12 +762,25 @@ if(is(Element : HTMLElement) && names.length >= 1)
 
             return app.data;
         }
+
+
+        string genSettingEventHandlers(string id)
+        {
+            import std.string : toLower;
+
+            auto app = appender!string();
+            app.formattedWrite(q{var e = document.getElementById("%1$s");}, id);
+
+            foreach(s; names)
+                app.formattedWrite(q{e.%3$s = function() { %1$s.%2$s(); };}, id, s, toLower(s));
+
+            return app.data;
+        }
     }
 }
 
 
-alias DeclDefSignals(Element, names...) = DefineSignals!(DefineSignals!(Element, names), names);
-
+alias DeclDefSignals(Element, names...) = DefineSignals!(DeclareSignals!(Element, names), names);
 
 
 /**
@@ -907,7 +932,6 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
     res._qs = mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])});
     return res;
 }
-
 
 
 struct WebLibrary

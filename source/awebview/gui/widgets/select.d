@@ -17,7 +17,7 @@ interface ISelect
 
 
 class Select(alias attrs = null)
-: TemplateHTMLElement!(DefineSignals!(DeclareSignals!(HTMLElement, "onChange"), "onChange"), `<select id=%[id%] onChange="%[id%].onChange()" ` ~ buildHTMLTagAttr(attrs) ~ `>%s</select>`),
+: TemplateHTMLElement!(DefineSignals!(DeclareSignals!(HTMLElement, "onChange"), "onChange"), `<select id="%[id%]" ` ~ buildHTMLTagAttr(attrs) ~ `>%s</select>`),
   ISelect
 {
     this(string id)

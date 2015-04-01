@@ -11,7 +11,7 @@
     {
       "name": "application",
       "targetType": "executable",
-      "lflags-windows-x86-dmd": ["-L/exet:nt/su:windows"],
+      "//lflags-windows-x86-dmd": ["-L/exet:nt/su:windows"],
       "preGenerateCommands":[
         "dub generate --config=copyCommand visuald",
         "dub generate --config=postCopyCommand visuald"
