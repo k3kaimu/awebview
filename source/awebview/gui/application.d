@@ -4,6 +4,7 @@ import std.exception;
 import std.file;
 
 import awebview.wrapper.webcore;
+import awebview.gui.resourceinterceptor;
 
 import awebview.gui.activity;
 import awebview.gui.html;
@@ -58,6 +59,17 @@ abstract class Application
     void shutdown();
 
 
+    final
+    @property
+    string exeDir() const
+    {
+        import std.path : dirName;
+        import std.file : thisExePath;
+
+        return dirName(thisExePath);
+    }
+
+
   private:
     ubyte[][string] _savedData;
     string _savedFileName;
@@ -82,11 +94,12 @@ class SDLApplication : Application
             DerelictSDL2.load();
             enforce(SDL_Init(SDL_INIT_VIDEO) >= 0);
 
+            _instance = new SDLApplication();
+
             auto config = WebConfig();
             config.additionalOptions ~= "--use-gl=desktop";
             WebCore.initialize(config);
-
-            _instance = new SDLApplication();
+            WebCore.instance.resourceInterceptor = new LocalResourceInterceptor(_instance, getcwd());
         }
 
         return _instance;

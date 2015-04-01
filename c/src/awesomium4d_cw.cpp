@@ -856,7 +856,7 @@ void AppendExtraHeader(ResourceRequest * p, WebString const * const name, WebStr
 unsigned int num_upload_elements(ResourceRequest const * const p)
 { return p->num_upload_elements(); }
 
-UploadElement const * GetUploadElement(ResourceRequest const * const p, unsigned int idx)
+void const * GetUploadElement(ResourceRequest const * const p, unsigned int idx)
 { return p->GetUploadElement(idx); }
 
 void ClearUploadElements(ResourceRequest * p)
@@ -876,10 +876,11 @@ void set_ignore_data_source_handler(ResourceRequest * p, bool ignore)
 
 namespace ResourceResponseMember {
 
+// buffer is copied, so it can be const.
 ResourceResponse * Create(unsigned int num_bytes,
-                          unsigned char* buffer,
+                          unsigned char const * buffer,
                           WebString const * const mime_type)
-{ return ResourceResponse::Create(num_bytes, buffer, *mime_type); }
+{ return ResourceResponse::Create(num_bytes, (unsigned char *)buffer, *mime_type); }
 
 ResourceResponse * Create(WebString const * const file_path)
 { return ResourceResponse::Create(*file_path); }
@@ -907,7 +908,7 @@ class UploadElementD2Cpp : public UploadElement
     bool IsFilePath() const { return _p->isFilePath(); }
     bool IsBytes() const { return _p->isBytes(); }
     unsigned int num_bytes() const { return _p->numBytes(); }
-    const unsigned char* bytes() const { return _p->bytes(); }
+    unsigned char const * bytes() const { return _p->bytes(); }
     WebString file_path() const
     {
         WebString dst;

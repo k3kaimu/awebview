@@ -281,21 +281,16 @@ class Activity
 
     private void _loadImpl(bool isInit)
     {
+        import std.uri : encodeComponent;
+
         // save html to disk
         import std.path : buildPath;
         import std.file;
 
-        immutable htmlPath = buildPath(this.tempDir, this.id ~ nowPage.id ~ ".html");
-        {
-            import std.file : write;
-            write(htmlPath, _nowPage.html);
-        }
-
+        immutable htmlPath = buildPath(application.exeDir, "Activity-" ~ this.id ~ "-HTMLPage-" ~ nowPage.id);
         _view.loadURL(WebURL(htmlPath));
         while(_view.isLoading)
             WebCore.instance.update();
-
-        //std.file.remove(htmlPath);
 
         _nowPage.onLoad(isInit);
     }
@@ -361,16 +356,6 @@ class Activity
     auto carrierObject()
     {
         return getObject("_carrierObject_");
-    }
-
-
-    @property
-    string tempDir() const
-    {
-        import std.path : dirName;
-        import std.file : thisExePath;
-
-        return dirName(thisExePath);
     }
 
 

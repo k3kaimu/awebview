@@ -24,11 +24,11 @@ mixin template Awesomium4D()
     }
 
 
-    interface ResourceInterceptorCpp2D : Awesomium.ResourceInterceptor {}
-    extern(C++, ResourceInterceptorCpp2DMember)
+    interface ResourceInterceptorD2Cpp : Awesomium.ResourceInterceptor {}
+    extern(C++, ResourceInterceptorD2CppMember)
     {
-        ResourceInterceptorCpp2D newCtor(IResourceRequestD, ulong);
-        void deleteDtor(ResourceInterceptorCpp2D);
+        ResourceInterceptorD2Cpp newCtor(IResourceInterceptorD, ulong);
+        void deleteDtor(ResourceInterceptorD2Cpp);
     }
 
     extern(C++, ResourceInterceptorMember)
@@ -38,7 +38,7 @@ mixin template Awesomium4D()
         void dtor(ResourceInterceptor p);
         void deleteDtor(ResourceInterceptor p);
 
-        ResourceResponse* OnRequest(ResourceInterceptor p,
+        ResourceResponse OnRequest(ResourceInterceptor p,
                                     ResourceRequest request);
 
         bool OnFilterNavigation(ResourceInterceptor p,
@@ -73,7 +73,7 @@ mixin template Awesomium4D()
         void clearUploadElements();
         void appendUploadFilePath(const(WebString) path);
         void appendUploadBytes(const(char)* bytes, uint num_bytes);
-        void setIgnoreDataSourceHandler(bool ignore);
+        void ignoreDataSourceHandler(bool ignore) @property;
     }
 
 
@@ -99,7 +99,7 @@ mixin template Awesomium4D()
         void set_extra_headers(Awesomium.ResourceRequest p, const(Awesomium.WebString) headers);
         void AppendExtraHeader(Awesomium.ResourceRequest p, const(Awesomium.WebString) name, const(Awesomium.WebString) value);
         uint num_upload_elements(const(Awesomium.ResourceRequest) p);
-        const(UploadElement) GetUploadElement(const(Awesomium.ResourceRequest) p, uint idx);
+        const(void)* GetUploadElement(const(Awesomium.ResourceRequest) p, uint idx);
         void ClearUploadElements(Awesomium.ResourceRequest p);
         void AppendUploadFilePath(Awesomium.ResourceRequest p, const(Awesomium.WebString) path);
         void AppendUploadBytes(Awesomium.ResourceRequest p, const(char)* bytes, uint num_bytes);
@@ -113,7 +113,7 @@ mixin template Awesomium4D()
 
     extern(C++, ResourceResponseMember)
     {
-        ResourceResponse Create(uint num_bytes, char* buffer, const WebString mime_type);
+        ResourceResponse Create(uint num_bytes, const(ubyte)* buffer, const WebString mime_type);
         ResourceResponse Create(const WebString file_path);
     }
 
@@ -123,7 +123,7 @@ mixin template Awesomium4D()
         bool isFilePath() const;
         bool isBytes() const;
         uint numBytes() const;
-        const(char)* bytes() const;
+        const(ubyte)* bytes() const;
         void getFilePath(Awesomium.WebString dst) const;
     }
 
@@ -140,7 +140,7 @@ mixin template Awesomium4D()
         bool IsFilePath(const UploadElement p);
         bool IsBytes(const UploadElement p);
         uint num_bytes(const UploadElement p);
-        const(char)* bytes(const UploadElement p);
+        const(ubyte)* bytes(const UploadElement p);
         void file_path(const UploadElement p, WebString dst);
     }
 }

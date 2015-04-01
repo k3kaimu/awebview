@@ -16,7 +16,7 @@
         "dub generate --config=copyCommand visuald",
         "dub generate --config=postCopyCommand visuald"
       ],
-      "sourceFiles-windows-x86": ["awesomium4d_cw.obj"]
+      "sourceFiles-windows-x86": ["awesomium4d_cw.obj"],
     },
 
     {

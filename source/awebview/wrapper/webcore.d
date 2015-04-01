@@ -9,7 +9,7 @@ import awebview.wrapper.webstring : WebString;
 import awebview.wrapper.webview : WebView;
 import awebview.wrapper.webpreferences : WebPreferences;
 //import awebview.wrapper.surface;
-
+import awebview.wrapper.resourceinterceptor : ResourceInterceptor;
 import awebview.wrapper.cpp : WebViewType;
 
 
@@ -81,11 +81,11 @@ struct WebCore
     //}
 
 
-    //@property
-    //void resourceInterceptor(IResourceInterceptor ri)
-    //{
-    //    WebCoreMember.set_resource_interceptor(ri.cppObj);
-    //}
+    @property
+    void resourceInterceptor(ResourceInterceptor ri)
+    {
+        WebCoreMember.set_resource_interceptor(this.cppObj, ri.cppObj);
+    }
 
 
     //@property
