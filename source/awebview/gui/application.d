@@ -44,19 +44,26 @@ abstract class Application
         addActivity(activity);
     }
 
+
+    bool hasActivity(string id);
     Activity getActivity(string id);
 
     final
     Activity opIndex(string id) { return getActivity(id); }
 
+    int opApplyActivities(scope int delegate(Activity activity));
+
     void attachActivity(string id);
     void detachActivity(string id);
     void destroyActivity(string id);
+
+    void runAtNextFrame(void delegate());
 
     void run();
     bool isRunning() @property;
 
     void shutdown();
+
 
 
     final
@@ -214,6 +221,18 @@ class SDLApplication : Application
     }
 
 
+    final override
+    bool hasActivity(string id)
+    {
+        if(auto p = id in _acts)
+            return true;
+        else if(auto p = id in _detachedActs)
+            return true;
+        else
+            return false;
+    }
+
+
     final
     SDLActivity getActivity(uint windowID)
     {
@@ -248,6 +267,21 @@ class SDLApplication : Application
                 return a;
 
         return null;
+    }
+
+
+    final override
+    int opApplyActivities(scope int delegate(Activity activity) dg)
+    {
+        foreach(k, ref e; _acts)
+            if(auto res = dg(e))
+                return res;
+
+        foreach(k, ref e; _detachedActs)
+            if(auto res = dg(e))
+                return res;
+
+        return 0;
     }
 
 
@@ -303,6 +337,13 @@ class SDLApplication : Application
 
 
     override
+    void runAtNextFrame(void delegate() dg)
+    {
+        _runNextFrame ~= dg;
+    }
+
+
+    override
     void run()
     {
         _isRunning = true;
@@ -322,6 +363,11 @@ class SDLApplication : Application
       LInf:
         while(!_isShouldQuit)
         {
+            foreach(e; _runNextFrame)
+                e();
+
+            _runNextFrame.length = 0;
+
             {
                 SDL_Event event;
                 while(SDL_PollEvent(&event)){
@@ -407,6 +453,8 @@ class SDLApplication : Application
     bool _isRunning;
     bool _isShouldQuit;
     ubyte[][string] _savedData;
+
+    void delegate()[] _runNextFrame;
 
     static SDLApplication _instance;
 }

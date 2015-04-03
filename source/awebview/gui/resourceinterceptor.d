@@ -1,6 +1,6 @@
 module awebview.gui.resourceinterceptor;
 
-import std.path, std.file, std.array;
+import std.path, std.file, std.array, std.algorithm;
 
 import awebview.gui.application;
 import awebview.wrapper.resourceinterceptor;
@@ -25,14 +25,23 @@ class LocalResourceInterceptor : ResourceInterceptor
             return super.onRequest(req);
 
         immutable path = req.url.path.to!string;
-        auto pathSp = path.pathSplitter.array;
+        auto pathSp = path.pathSplitter.map!"a.idup".array;
 
         if(pathSp.length >= 1)
         {
             auto spsp = pathSp[$-1].split("-");
-            if(spsp.length == 4){
-                char[] html = _app.getActivity(spsp[$-3].dup)[spsp[$-1].dup].html.dup;
-                return ResourceResponse(cast(ubyte[])html, "text/html");
+            if(spsp.length == 4 && spsp[0] == "Activity" && spsp[2] == "HTMLPage"){
+                auto activity = _app.getActivity(spsp[1]);
+                if(spsp[3].extension == ".html"){                   // Activity-%[act.id%]-HTMLPage-%[page.id%].html
+                    char[] html = activity[spsp[3].baseName(".html")].html.dup;
+                    return ResourceResponse(cast(ubyte[])html, "text/html");
+                }else if(activity.nowPage != activity[spsp[3]]){    // Activity-%[act.id%]-HTMLPage-%[other page.id%]
+                    _app.runAtNextFrame((){ activity.load(spsp[3]); });
+                    return ResourceResponse(null);
+                }else{                                               // Activity-%[act.id%]-HTMLPage-%[now page.id%]
+                    _app.runAtNextFrame((){ activity.reload(); });
+                    return ResourceResponse(null);
+                }
             }
         }
 
@@ -45,6 +54,7 @@ class LocalResourceInterceptor : ResourceInterceptor
     Application _app;
 }
 
+__EOF__
 
 /**
 http://webdesign.about.com/od/multimedia/a/mime-types-by-file-extension.htm

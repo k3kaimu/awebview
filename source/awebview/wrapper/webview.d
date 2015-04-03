@@ -12,6 +12,7 @@ import awebview.wrapper.surface : Surface;
 
 import std.traits;
 
+
 struct WebView
 {
     this(awebview.wrapper.cpp.WebView cppObj)
@@ -56,7 +57,10 @@ struct WebView
     //void setViewListener(Awesomium.WebViewListener.View);
     //void setLoadListener(Awesomium.WebViewListener.Load);
     //void setProcessListener(Awesomium.WebViewListener.Process);
-    //void setMenuListener(Awesomium.WebViewListener.Menu);
+
+    void setMenuListener(Awesomium.WebViewListener.Menu ml)
+    { WebViewMember.set_menu_listener(_cppObj, ml); }
+
     //void setDialogListener(Awesomium.WebViewListener.Dialog);
     //void setPrintListener(Awesomium.WebViewListener.Print);
     //void setDonwloadListener(Awesomium.WebViewListener.Download);

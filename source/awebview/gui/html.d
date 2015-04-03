@@ -457,6 +457,34 @@ class HTMLElement
 
 
     /**
+    pos : absolute position
+    */
+    uint[2] pos() @property
+    {
+        activity.runJS(mixin(Lstr!q{
+          (function (){
+            var e = document.getElementById("%[id%]");
+            var x = e.offsetLeft;
+            var y = e.offsetTop;
+
+            while(e = e.offsetParent){
+                x += e.offsetLeft;
+                y += e.offsetTop;
+            }
+
+            _carrierObject_.x = x;
+            _carrierObject_.y = y;
+          }())
+        }));
+
+        auto co = activity.carrierObject;
+        uint x = co["x"].get!uint;
+        uint y = co["y"].get!uint;
+        return [x, y];
+    }
+
+
+    /**
     .innerHTML
     */
     void innerHTML(string html)
@@ -581,6 +609,18 @@ class IDOnlyElement : HTMLElement
 }
 
 
+class TagOnlyElement : HTMLElement
+{
+    this(string id)
+    in {
+        assert(id !is null);
+    }
+    body {
+        super(id, true);
+    }
+}
+
+
 /**
 Example:
 ----------------------
@@ -597,7 +637,7 @@ auto btn1 = new MyButton("btn1");
 assert(btn1.html == q{<input type="button" id="btn1" value="Click me!">});
 ----------------------
 */
-class TemplateHTMLElement(Element, string form) : Element
+abstract class TemplateHTMLElement(Element, string form) : Element
 if(is(Element : HTMLElement))
 {
     this(T...)(auto ref T args)
@@ -657,7 +697,7 @@ btn1.onClick.strongConnect(delegate(FiredContext ctx, WeakRef!(const(JSArrayCpp)
 });
 ----------------
 */
-class DefineSignals(Element, names...) : Element
+abstract class DefineSignals(Element, names...) : Element
 if(is(Element : HTMLElement) && names.length >= 1)
 {
     import carbon.event;
@@ -725,6 +765,14 @@ if(is(Element : HTMLElement) && names.length >= 1)
     this(T...)(auto ref T args)
     {
         super(forward!args);
+        _doInit = true;
+    }
+
+
+    final
+    void doJSInitialize(bool b)
+    {
+        _doInit = b;
     }
 
 
@@ -743,13 +791,13 @@ if(is(Element : HTMLElement) && names.length >= 1)
     {
         super.onLoad(init);
 
-        if(init)
+        if(init && _doInit)
             this.activity.runJS(genSettingEventHandlers(this.id));
     }
 
 
   private:
-    bool _iniUpdate;
+    bool _doInit;
 
     static
     {
@@ -781,6 +829,22 @@ if(is(Element : HTMLElement) && names.length >= 1)
 
 
 alias DeclDefSignals(Element, names...) = DefineSignals!(DeclareSignals!(Element, names), names);
+
+
+/**
+Open context menu when user click right button.
+*/
+abstract class DeclareContextMenu(Element) : DeclareSignals!(Element, "onContextMenu")
+{
+    HTMLPage menuPage() @property;
+
+
+    override
+    void onContextMenu(WeakRef!(const(JSArrayCpp)))
+    {
+        this.activity.popup(this.menuPage);
+    }
+}
 
 
 /**

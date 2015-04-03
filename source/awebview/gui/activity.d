@@ -16,9 +16,12 @@ import awebview.gui.html,
        awebview.gui.methodhandler,
        derelict.sdl2.sdl;
 
+import awebview.gui.menulistener;
+
 import std.exception,
        std.string;
 
+//version = AwebviewSaveHTML;
 
 class Activity
 {
@@ -39,6 +42,9 @@ class Activity
     void onStart(Application app)
     {
         _app = app;
+
+        auto ml = new SDLMenuListener(_app);
+        _view.setMenuListener(ml.cppObj);
 
         foreach(k, p; _pages.maybeModified)
             p.page.onStart(this);
@@ -238,6 +244,7 @@ class Activity
 
     void load(string id)
     {
+        import std.stdio;
         immutable bool isStarted = this.application !is null && this.application.isRunning;
 
         auto p = enforce(id in _pages);
@@ -246,7 +253,6 @@ class Activity
             _nowPage.onDetach();
 
         _nowPage = p.page;
-
         if(isStarted)
         {
             bool bInit;
@@ -281,13 +287,22 @@ class Activity
 
     private void _loadImpl(bool isInit)
     {
+        import std.stdio;
         import std.uri : encodeComponent;
 
         // save html to disk
         import std.path : buildPath;
         import std.file;
 
-        immutable htmlPath = buildPath(application.exeDir, "Activity-" ~ this.id ~ "-HTMLPage-" ~ nowPage.id);
+        immutable htmlPath = buildPath(application.exeDir, "Activity-" ~ this.id ~ "-HTMLPage-" ~ nowPage.id ~ ".html");
+
+      version(AwebviewSaveHTML)
+      {
+        try
+            std.file.write(htmlPath, _nowPage.html);
+        catch(Exception){}
+      }
+
         _view.loadURL(WebURL(htmlPath));
         while(_view.isLoading)
             WebCore.instance.update();
@@ -624,6 +639,17 @@ class SDLPopupActivity : SDLBorderlessActivity
     }
 
 
+    void popupAtRel(HTMLPage page, SDLActivity activity, int relX, int relY)
+    {
+        int x,  y;
+        SDL_GetWindowPosition(activity.sdlWindow, &x, &y);
+
+        x += relX;
+        y += relY;
+        popup(page, activity, x, y);
+    }
+
+
     void popup(HTMLPage page, SDLActivity activity)
     {
       version(Windows)
@@ -641,7 +667,7 @@ class SDLPopupActivity : SDLBorderlessActivity
         SDL_GetMouseState(&dx, &dy);
 
         int x, y;
-        SDL_GetWindowPosition(_parent.sdlWindow, &x, &y);
+        SDL_GetWindowPosition(activity.sdlWindow, &x, &y);
 
         x += dx;
         y += dy;
@@ -651,24 +677,30 @@ class SDLPopupActivity : SDLBorderlessActivity
     }
 
 
-    void popupChild(HTMLPage page, size_t relX, size_t relY)
+    void popupChild(HTMLPage page, int relX, int relY)
     {
         if(_child is null){
             _child = new SDLPopupActivity(_idx + 1, _session, _flags);
             this.application.addActivity(_child);
         }
 
-        _child.popup(page, this, _x + relX, _y + relY);
+        popupChildAtAbs(page, _x + relX, _y + relY);
     }
 
 
-    void popupChildRight(HTMLPage page, size_t relY)
+    void popupChildAtAbs(HTMLPage page, uint x, uint y)
+    {
+        _child.popup(page, this, x, y);
+    }
+
+
+    void popupChildRight(HTMLPage page, int relY)
     {
         popupChild(page, _w, relY);
     }
 
 
-    void popupChildButtom(HTMLPage page, size_t relX)
+    void popupChildButtom(HTMLPage page, int relX)
     {
         popupChild(page, relX, _h);
     }

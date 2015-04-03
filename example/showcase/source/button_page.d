@@ -9,6 +9,7 @@ import awebview.gui.contextmenu;
 import std.conv;
 
 import carbon.utils;
+import carbon.nonametype;
 
 class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
 {
@@ -47,7 +48,7 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
                 "fooo",
                 "foooo000",
             '-',
-                (btn){btn.onMouseOver.connect!"onMouseOverMenuItemDiv"(this); return btn;}(new DeclDefSignals!(TemplateHTMLElement!(`<div id="%[id%]">Click me!</div>`), "onMouseOver")("div_button2", true)));
+                (btn){btn.onMouseOver.connect!"onMouseOverMenuItemDiv"(this); return btn;}(new AssumeImplemented!(DeclDefSignals!(TemplateHTMLElement!(`<div id="%[id%]">Click me!</div>`), "onMouseOver"))("div_button2", true)));
         popup.popup(page, this.activity.to!SDLActivity);
     }
 

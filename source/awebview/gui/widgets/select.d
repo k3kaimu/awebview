@@ -2,8 +2,15 @@ module awebview.gui.select;
 
 
 import awebview.gui.html;
+import awebview.gui.activity;
+import awebview.gui.application;
+import awebview.wrapper;
+
 import std.string;
 import std.array;
+import std.typecons;
+
+import carbon.nonametype;
 
 
 interface ISelect
@@ -17,7 +24,9 @@ interface ISelect
 
 
 class Select(alias attrs = null)
-: TemplateHTMLElement!(DefineSignals!(DeclareSignals!(HTMLElement, "onChange"), "onChange"), `<select id="%[id%]" ` ~ buildHTMLTagAttr(attrs) ~ `>%s</select>`),
+: DefineSignals!(DeclareSignals!(TemplateHTMLElement!(HTMLElement, `<select id="%[id%]" ` ~ buildHTMLTagAttr(attrs) ~ `>%s</select>`),
+                                 "onChange", "onClick"),
+                "onChange"),
   ISelect
 {
     this(string id)
@@ -125,7 +134,7 @@ class Select(alias attrs = null)
     @property
     uint selectedIndex()
     {
-        return this["selected"].get!uint;
+        return this["selectedIndex"].get!uint;
     }
 
 
@@ -160,9 +169,74 @@ class Select(alias attrs = null)
     }
 
 
+    @property
+    void selectedIndex(size_t idx)
+    {
+        this["selectedIndex"] = idx;
+    }
+
+
     void makeOption(size_t i, string key, string text, scope void delegate(const(char)[]) sink) const
     {
         sink.formattedWrite(`<option value="%s">%s</option>`, key, text);
+    }
+
+
+    HTMLPage makePopupMenu() @property
+    {
+        static class Result : HTMLPage
+        {
+            this(Select sel)
+            {
+                _sel = sel;
+                super(_sel.id ~ "_contextmenu_");
+
+                auto tag = new AssumeImplemented!(DeclDefSignals!(TagOnlyElement, "onClick"))(_sel.id);
+                tag.doJSInitialize = false;
+                tag.onClick.connect!"onClick"(this);
+                _elems[tag.id] = tag;
+            }
+
+
+            override
+            inout(HTMLElement[string]) elements() inout @property { return _elems; }
+
+
+            override
+            string html() const @property
+            {
+                string genRows()
+                {
+                    auto app = appender!string();
+                    foreach(i, e; _sel._opts)
+                        app.formattedWrite(q{<tr onclick="%3$s.onClick(%1$s)"><td>%2$s</td></tr>}, i, e[1], _sel.id);
+                    return app.data;
+                }
+
+                auto app = appender!string();
+                app.put(`<html><head><title>select</title></head><style>tr:hover { background-color: #007bff; color: #000000; }</style>`);
+                app.put(`<body style="margin:0px; padding:0px">`);
+                app.formattedWrite(`<table id="%1$s" style="border-collapse: collapse; border: inset 1px black;">%2$s</table>`, _sel.id, genRows());
+                app.put(`</body></html>`);
+                return app.data;
+            }
+
+
+            void onClick(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
+            {
+                assert(args.length == 1);
+                auto idx = args[0].get!uint;
+                _sel.selectedIndex = idx;
+                activity.detach();
+            }
+
+
+          private:
+            HTMLElement[string] _elems;
+            Select _sel;
+        }
+
+        return new Result(this);
     }
 
 
@@ -180,7 +254,25 @@ class Select(alias attrs = null)
     }
 
 
+    override
+    void onClick(WeakRef!(const(JSArrayCpp)) args)
+    {
+        if(_popupMenu is null)
+            _popupMenu = makePopupMenu();
+
+        auto pos = this.pos;
+        if(auto a = cast(SDLPopupActivity)activity){
+            a.popupChild(_popupMenu, pos[0], pos[1] + this["innerHeight"].get!uint);
+        }else{
+            auto a = cast(SDLApplication)application;
+            a.popupActivity.popupAtRel(_popupMenu, cast(SDLActivity)this.activity, pos[0], pos[1] + this["innerHeight"].get!uint);
+        }
+    }
+
+
   private:
     string[2][] _opts;
     bool _bShowAllOptions;
+
+    HTMLPage _popupMenu;
 }

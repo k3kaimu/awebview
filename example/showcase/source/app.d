@@ -6,6 +6,9 @@ import awebview.gui.widgets.select;
 import awebview.wrapper;
 
 import button_page;
+import switchlink;
+
+import std.conv;
 
 void main()
 {
@@ -43,15 +46,14 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
         this ~= (){
             auto sel = new Select!()("select_page");
             _select = sel;
+            sel.showAllOptions = true;
             sel.options ~= ["buttonActivity",     "button"];
-            //sel ~= ["checkboxActivity",   "checkbox"];
-            //sel ~= ["textActivity", "text"];
+            sel.options ~= ["switchLinkActivity", "link"];
             return sel;
         }();
 
-        this._pages["buttonActivity"] = new ButtonPage();
-        //this._pages["checkboxActivity"] = new CheckboxPage();
-        //this._pages["textActivity"] = new TextPage();
+        this._pages["buttonActivity"] = [new ButtonPage()];
+        this._pages["switchLinkActivity"] = [new SwitchLinkPage("A"), new SwitchLinkPage("B")];
     }
 
 
@@ -59,11 +61,17 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
     {
         string str = _select.selected;
         auto app = cast(SDLApplication)application;
-        if(str in _pages && str !in app.activities)
-            activity.addChild(app.createActivity(WebPreferences.recommended, _pages[str], str, 600, 400, "Showcase"));
+        if(str in _pages && str !in app.activities){
+            auto act = app.createActivity(WebPreferences.recommended, _pages[str][0], str, 600, 400, "Showcase");
+
+            foreach(e; _pages[str][1 .. $])
+                act ~= e;
+
+            activity.addChild(act);
+        }
     }
 
   private:
     ISelect _select;
-    HTMLPage[string] _pages;
+    HTMLPage[][string] _pages;
 }

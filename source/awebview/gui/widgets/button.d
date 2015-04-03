@@ -11,6 +11,8 @@ import carbon.event,
 
 public import carbon.event : FiredContext;
 
+import carbon.nonametype;
+
 
 interface IButton
 {
@@ -31,5 +33,5 @@ abstract class Button : DeclareSignals!(HTMLElement, "onClick"), IButton
 }
 
 
-alias GenericButton(alias format) = TemplateHTMLElement!(DefineSignals!(Button, "onClick"), format);
+alias GenericButton(alias format) = AssumeImplemented!(TemplateHTMLElement!(DefineSignals!(Button, "onClick"), format));
 alias InputButton(alias attrs = null) = GenericButton!(`<input type="button" id="%[id%]" ` ~ buildHTMLTagAttr(attrs) ~ `>`);
