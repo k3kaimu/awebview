@@ -8,34 +8,37 @@ import carbon.utils;
 import std.string;
 import std.array;
 import std.format;
+import std.traits;
+
 
 struct JSExpression
 {
-    this(string jsexpr)
+    this(string jsexpr, Activity activity = null)
     {
         _expr = jsexpr;
+        _activity = activity;
     }
 
 
     static
-    JSExpression literal(Int)(Int n)
+    JSExpression literal(Int)(Int n, Activity activity = null)
     if(is(Int : ulong))
     {
-        return JSExpression(to!string(n));
+        return JSExpression(to!string(n), activity);
     }
 
 
     static
-    JSExpression literal(string str)
+    JSExpression literal(string str, Activity activity = null)
     {
-        return JSExpression(toLiteral(str));
+        return JSExpression(toLiteral(str), activity);
     }
 
 
     static
-    JSExpression literal(bool b)
+    JSExpression literal(bool b, Activity activity = null)
     {
-        return JSExpression(b ? "true" : "false");
+        return JSExpression(b ? "true" : "false", activity);
     }
 
 
@@ -47,13 +50,25 @@ struct JSExpression
 
     JSExpression opIndex(string str)
     {
-        return JSExpression(format(`(%s)["%s"]`, _expr, toLiteral(str)));
+        return JSExpression(format(`(%s)["%s"]`, _expr, toLiteral(str)), _activity);
+    }
+
+
+    JSExpression opIndexAssign(JSExpression rhs, string str)
+    {
+        return JSExpression(format(`(%s).["%s"] = %s`, _expr, toLiteral(str), rhs._expr), _activity);
     }
 
 
     JSExpression opIndex(size_t n)
     {
-        return JSExpression(format("(%s)[%s]", _expr, n));
+        return JSExpression(format("(%s)[%s]", _expr, n), _activity);
+    }
+
+
+    JSExpression opIndexAssign(JSExpression rhs, size_t n)
+    {
+        return JSExpression(format(`(%s).[%s] = %s`, _expr, n, rhs._expr), _activity);
     }
 
 
@@ -72,13 +87,37 @@ struct JSExpression
         }
         app.put(")");
 
-        return JSExpression(app.data);
+        return JSExpression(app.data, _activity);
+    }
+
+
+    JSValue eval()
+    {
+        return evalOn(_activity);
+    }
+
+
+    void run()
+    {
+        runOn(_activity);
     }
 
 
     JSValue evalOn(Activity activity)
     {
         return activity.evalJS(_expr);
+    }
+
+
+    void runOn(Activity activity)
+    {
+        activity.runJS(_expr);
+    }
+
+
+    T eval(T)()
+    {
+        return evalOn!T(_activity);
     }
 
 
@@ -90,4 +129,17 @@ struct JSExpression
 
   private:
     string _expr;
+    Activity _activity;
 }
+
+
+//auto querySelector(Activity activity, string query)
+//{
+//    return JSExpression(format(q{document.querySelector(%s)}), toLiteral(query), activity);
+//}
+
+
+//auto querySelectorAll(Activity activity, string query)
+//{
+//    return JSExpression(format(q{document.querySelectorAll(%s)}), toLiteral(query), activity);
+//}

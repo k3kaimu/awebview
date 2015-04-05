@@ -1002,11 +1002,7 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
 
         }
         body{
-            auto ca = activity.carrierObject;
-            ca.setProperty("value0", JSValue(pos));
-            ca.setProperty("value1", JSValue(html));
-            activity.evalJS(mixin(Lstr!
-                q{%[_qs%].insertAdjacentHTML(_carrierObject_.value0, _carrierObject_.value1);}));
+            JSExpression(_qs).invoke("insertAdjacentHTML", pos, html).runOn(activity);
         }
 
 
