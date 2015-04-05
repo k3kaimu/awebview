@@ -6,6 +6,8 @@ import awebview.gui.activity;
 import carbon.utils;
 
 import std.string;
+import std.array;
+import std.format;
 
 struct JSExpression
 {
@@ -37,15 +39,40 @@ struct JSExpression
     }
 
 
+    string jsExpr() const @property pure nothrow @safe @nogc
+    {
+        return _expr;
+    }
+
+
     JSExpression opIndex(string str)
     {
-        return JSExpression(format("(%s).%s", _expr, toLiteral(str)));
+        return JSExpression(format(`(%s)["%s"]`, _expr, toLiteral(str)));
     }
 
 
     JSExpression opIndex(size_t n)
     {
         return JSExpression(format("(%s)[%s]", _expr, n));
+    }
+
+
+    JSExpression invoke(T...)(string name, T args)
+    {
+        auto app = appender!string();
+        app.formattedWrite("(%s).%s(", _expr, name);
+        foreach(i, ref e; args){
+            static if(isSomeString!(typeof(e)))
+                app.put(toLiteral(e));
+            else
+                app.formattedWrite("%s", e);
+
+            if(i != T.length - 1)
+                app.put(",");
+        }
+        app.put(")");
+
+        return JSExpression(app.data);
     }
 
 

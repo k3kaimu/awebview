@@ -626,7 +626,7 @@ class SDLPopupActivity : SDLBorderlessActivity
     }
 
 
-    void popup(HTMLPage page, SDLActivity activity, int x, int y)
+    void popup(HTMLPage page, SDLActivity activity, int x, int y, uint w, uint h)
     {
         _parent = activity;
         SDL_SetWindowPosition(this.sdlWindow, x, y);
@@ -634,23 +634,33 @@ class SDLPopupActivity : SDLBorderlessActivity
         this.load(page);
         SDL_RaiseWindow(this.sdlWindow);
 
+        if(w == 0 && h == 0){
+            _fitting = true;
+        }
+        else{
+            _fitting = false;
+            this.resize(w, h);
+        }
+
         _x = x;
         _y = y;
+        _w = w;
+        _h = h;
     }
 
 
-    void popupAtRel(HTMLPage page, SDLActivity activity, int relX, int relY)
+    void popupAtRel(HTMLPage page, SDLActivity activity, int relX, int relY, uint w = 0, uint h = 0)
     {
         int x,  y;
         SDL_GetWindowPosition(activity.sdlWindow, &x, &y);
 
         x += relX;
         y += relY;
-        popup(page, activity, x, y);
+        popup(page, activity, x, y, w, h);
     }
 
 
-    void popup(HTMLPage page, SDLActivity activity)
+    void popup(HTMLPage page, SDLActivity activity, uint w = 0, uint h = 0)
     {
       version(Windows)
       {
@@ -658,7 +668,7 @@ class SDLPopupActivity : SDLBorderlessActivity
         POINT p;
         GetCursorPos(&p);
 
-        popup(page, activity, p.x, p.y);
+        popup(page, activity, p.x, p.y, w, h);
       }
       else
       {
@@ -672,37 +682,37 @@ class SDLPopupActivity : SDLBorderlessActivity
         x += dx;
         y += dy;
 
-        popup(page, activity, x, y);
+        popup(page, activity, x, y, w, h);
       }
     }
 
 
-    void popupChild(HTMLPage page, int relX, int relY)
+    void popupChild(HTMLPage page, int relX, int relY, uint w = 0, uint h = 0)
     {
         if(_child is null){
             _child = new SDLPopupActivity(_idx + 1, _session, _flags);
             this.application.addActivity(_child);
         }
 
-        popupChildAtAbs(page, _x + relX, _y + relY);
+        popupChildAtAbs(page, _x + relX, _y + relY, w, h);
     }
 
 
-    void popupChildAtAbs(HTMLPage page, uint x, uint y)
+    void popupChildAtAbs(HTMLPage page, uint x, uint y, uint w = 0, uint h = 0)
     {
-        _child.popup(page, this, x, y);
+        _child.popup(page, this, x, y, w, h);
     }
 
 
-    void popupChildRight(HTMLPage page, int relY)
+    void popupChildRight(HTMLPage page, int relY, uint w = 0, uint h = 0)
     {
-        popupChild(page, _w, relY);
+        popupChild(page, _w, relY, w, h);
     }
 
 
-    void popupChildButtom(HTMLPage page, int relX)
+    void popupChildButtom(HTMLPage page, int relX, uint w = 0, uint h = 0)
     {
-        popupChild(page, relX, _h);
+        popupChild(page, relX, _h, w, h);
     }
 
 
@@ -713,6 +723,7 @@ class SDLPopupActivity : SDLBorderlessActivity
         _y = 0;
         _w = 0;
         _h = 0;
+        _fitting = false;
         this.resize(0, 0);
         _parent = null;
 
@@ -725,13 +736,15 @@ class SDLPopupActivity : SDLBorderlessActivity
     {
         super.onUpdate();
 
-        uint sw = evalJS(q{document.documentElement.scrollWidth}).get!uint;
-        uint sh = evalJS(q{document.documentElement.scrollHeight}).get!uint;
+        if(_fitting){
+            uint sw = evalJS(q{document.documentElement.scrollWidth}).get!uint;
+            uint sh = evalJS(q{document.documentElement.scrollHeight}).get!uint;
 
-        if(_w != sw || _h != sh){
-            this.resize(sw, sh);
-            _w = sw;
-            _h = sh;
+            if(_w != sw || _h != sh){
+                this.resize(sw, sh);
+                _w = sw;
+                _h = sh;
+            }
         }
 
         if(_parent.isDetached || !this.hasFocus){
@@ -771,6 +784,7 @@ class SDLPopupActivity : SDLBorderlessActivity
     WebSession _session;
     uint _flags;
 
+    bool _fitting;
     uint _x, _y;
     uint _w, _h;
 

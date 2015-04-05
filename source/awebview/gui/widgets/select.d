@@ -257,15 +257,17 @@ class Select(alias attrs = null)
     override
     void onClick(WeakRef!(const(JSArrayCpp)) args)
     {
+        import std.stdio;
+        writeln("onClick");
         if(_popupMenu is null)
             _popupMenu = makePopupMenu();
 
-        auto pos = this.pos;
+        auto rec = this.boundingClientRect;
         if(auto a = cast(SDLPopupActivity)activity){
-            a.popupChild(_popupMenu, pos[0], pos[1] + this["innerHeight"].get!uint);
+            a.popupChild(_popupMenu, rec.x, rec.y + rec.height);
         }else{
             auto a = cast(SDLApplication)application;
-            a.popupActivity.popupAtRel(_popupMenu, cast(SDLActivity)this.activity, pos[0], pos[1] + this["innerHeight"].get!uint);
+            a.popupActivity.popupAtRel(_popupMenu, cast(SDLActivity)this.activity, rec.x, rec.y + rec.height);
         }
     }
 

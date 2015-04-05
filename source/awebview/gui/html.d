@@ -7,7 +7,10 @@ import awebview.gui.application;
 
 import awebview.wrapper;
 
+import awebview.jsbuilder;
+
 import std.variant;
+import std.typecons;
 
 import std.array : appender;
 import std.format : formattedWrite;
@@ -300,6 +303,19 @@ class HTMLElement
     }
 
 
+    @property
+    JSExpression domObject() const
+    in {
+        assert(hasObject || hasId);
+    }
+    body {
+        if(this.hasObject)
+            return JSExpression(mixin(Lstr!q{_tmp_%[_id%].domObject}));
+        else
+            return JSExpression(`document.getElementById("` ~ id ~ `")`);
+    }
+
+
     final @property bool hasId() const pure nothrow @safe @nogc { return _id !is null; }
 
 
@@ -339,7 +355,14 @@ class HTMLElement
 
     void onLoad(bool isInit)
     {
-        if(this.hasId){
+        if(isInit && this.hasObject){
+            activity.runJS(mixin(Lstr!q{
+                _tmp_%[_id%] = {};
+                _tmp_%[_id%].domObject = document.getElementById("%[_id%]");
+            }));
+        }
+
+        if(this.hasId || this.hasObject){
             foreach(key, ref v; _staticProperties)
                 this.opIndexAssign(v, key);
         }
@@ -425,18 +448,18 @@ class HTMLElement
         if(value.isBoolean){
             if(value.get!bool)
                 activity.runJS(mixin(Lstr!
-                    q{document.getElementById("%[id%]").%[name%] = true;}
+                    q{%[domObject.jsExpr%].%[name%] = true;}
                 ));
             else
                 activity.runJS(mixin(Lstr!
-                    q{document.getElementById("%[id%]").%[name%] = false;}
+                    q{%[domObject.jsExpr%].%[name%] = false;}
                 ));
         }else{
             auto carrier = activity.carrierObject;
             carrier.setProperty("value", value);
 
             activity.runJS(mixin(Lstr!
-                q{document.getElementById("%[id%]").%[name%] = _carrierObject_.value;}
+                q{%[domObject.jsExpr%].%[name%] = _carrierObject_.value;}
             ));
         }
     }
@@ -449,13 +472,72 @@ class HTMLElement
     }
     body{
         JSValue jv = activity.evalJS(mixin(Lstr!
-            q{document.getElementById("%[id%]").%[name%];}
+            q{%[domObject.jsExpr%].%[name%];}
         ));
 
         return jv;
     }
 
 
+    final
+    Tuple!(uint, "x", uint, "y", uint, "width", uint, "height")
+     boundingClientRect() @property
+    {
+        this.activity.runJS(mixin(Lstr!q{
+            var e = %[domObject.jsExpr%].getBoundingClientRect();
+            _carrierObject_.x = e.left;
+            _carrierObject_.y = e.top;
+            _carrierObject_.w = e.width;
+            _carrierObject_.h = e.height;
+        }));
+
+        auto co = activity.carrierObject;
+        typeof(return) res;
+        res.x = co["x"].get!uint;
+        res.y = co["y"].get!uint;
+        res.width = co["w"].get!uint;
+        res.height = co["h"].get!uint;
+
+        return res;
+    }
+
+
+    final
+    uint posY() @property
+    {
+        return domObject.invoke("getBoundingClientRect")["top"].evalOn(this.activity).get!uint;
+    }
+
+
+    final
+    uint posX() @property
+    {
+        return domObject.invoke("getBoundingClientRect")["left"].evalOn(this.activity).get!uint;
+    }
+
+
+    final
+    uint[2] pos() @property
+    {
+        auto rec = boundingClientRect();
+        return [rec.x, rec.y];
+    }
+
+
+    final
+    uint width() @property
+    {
+        return domObject.invoke("getBoundingClientRect")["width"].evalOn(this.activity).get!uint;
+    }
+
+
+    final
+    uint height() @property
+    {
+        return domObject.invoke("getBoundingClientRect")["width"].evalOn(this.activity).get!uint;
+    }
+
+/+
     /**
     pos : absolute position
     */
@@ -463,7 +545,7 @@ class HTMLElement
     {
         activity.runJS(mixin(Lstr!q{
           (function (){
-            var e = document.getElementById("%[id%]");
+            var e = %[domObject.jsExpr%];
             var x = e.offsetLeft;
             var y = e.offsetTop;
 
@@ -477,11 +559,10 @@ class HTMLElement
           }())
         }));
 
-        auto co = activity.carrierObject;
-        uint x = co["x"].get!uint;
-        uint y = co["y"].get!uint;
+        uint x = activity.evalJS(q{_carrierObject_.x]}).get!uint;
+        uint y = activity.evalJS(q{_carrierObject_.y}).get!uint;
         return [x, y];
-    }
+    }+/
 
 
     /**
@@ -495,7 +576,7 @@ class HTMLElement
         auto ca = activity.carrierObject;
         ca.setProperty("value", JSValue(html));
         activity.evalJS(mixin(Lstr!
-            q{document.getElementById("%[id%]").innerHTML = _carrierObject_.value; }));
+            q{%[domObject.jsExpr%].innerHTML = _carrierObject_.value; }));
     }
 
 
@@ -511,7 +592,7 @@ class HTMLElement
         ca.setProperty("value0", JSValue(pos));
         ca.setProperty("value1", JSValue(html));
         activity.evalJS(mixin(Lstr!
-            q{document.getElementById("%[id%]").insertAdjacentHTML(_carrierObject_.value0, _carrierObject_.value1);}));
+            q{%[domObject.jsExpr%].insertAdjacentHTML(_carrierObject_.value0, _carrierObject_.value1);}));
     }
 
 
@@ -574,7 +655,7 @@ class HTMLElement
     body{
       static if(T.length == 0)
         activity.evalJS(mixin(Lstr!
-            q{document.getElementById("%[id%]").%[name%]();}
+            q{%[domObject.jsExpr%].%[name%]();}
         ));
       else{
         auto carrier = activity.carrierObject;
@@ -582,7 +663,7 @@ class HTMLElement
             carrier.setProperty(format("value%s", i), JSValue(e));
 
         activity.evalJS(mixin(Lstr!
-            q{document.getElementById("%[id%]").%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
+            q{%[domObject.jsExpr%].%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
         ));
       }
     }
@@ -791,13 +872,14 @@ if(is(Element : HTMLElement) && names.length >= 1)
     {
         super.onLoad(init);
 
-        if(init && _doInit)
-            this.activity.runJS(genSettingEventHandlers(this.id));
+        if(init && _doInit){
+            this.activity.runJS(genSettingEventHandlers(this.id, this.domObject.jsExpr));
+        }
     }
 
 
   private:
-    bool _doInit;
+    bool _doInit = true;
 
     static
     {
@@ -812,12 +894,12 @@ if(is(Element : HTMLElement) && names.length >= 1)
         }
 
 
-        string genSettingEventHandlers(string id)
+        string genSettingEventHandlers(string id, string domExpr)
         {
             import std.string : toLower;
 
             auto app = appender!string();
-            app.formattedWrite(q{var e = document.getElementById("%1$s");}, id);
+            app.formattedWrite("var e = %s;", domExpr);
 
             foreach(s; names)
                 app.formattedWrite(q{e.%3$s = function() { %1$s.%2$s(); };}, id, s, toLower(s));
