@@ -131,6 +131,9 @@ abstract class HTMLPage
     }
 
 
+    void onResize(size_t w, size_t h) {}
+
+
   private:
     Activity _activity;
     string _id;
@@ -304,15 +307,15 @@ class HTMLElement
 
 
     @property
-    JSExpression domObject() const
+    JSExpression domObject()
     in {
         assert(hasObject || hasId);
     }
     body {
         if(this.hasObject)
-            return JSExpression(mixin(Lstr!q{_tmp_%[_id%].domObject}));
+            return JSExpression(mixin(Lstr!q{_tmp_%[_id%].domObject}), activity);
         else
-            return JSExpression(`document.getElementById("` ~ id ~ `")`);
+            return JSExpression(`document.getElementById("` ~ id ~ `")`, activity);
     }
 
 
@@ -355,7 +358,7 @@ class HTMLElement
 
     void onLoad(bool isInit)
     {
-        if(isInit && this.hasObject){
+        if(this.hasObject){
             activity.runJS(mixin(Lstr!q{
                 _tmp_%[_id%] = {};
                 _tmp_%[_id%].domObject = document.getElementById("%[_id%]");
@@ -505,14 +508,14 @@ class HTMLElement
     final
     uint posY() @property
     {
-        return domObject.invoke("getBoundingClientRect")["top"].evalOn(this.activity).get!uint;
+        return domObject.invoke("getBoundingClientRect")["top"].eval().get!uint;
     }
 
 
     final
     uint posX() @property
     {
-        return domObject.invoke("getBoundingClientRect")["left"].evalOn(this.activity).get!uint;
+        return domObject.invoke("getBoundingClientRect")["left"].eval().get!uint;
     }
 
 
@@ -527,42 +530,15 @@ class HTMLElement
     final
     uint width() @property
     {
-        return domObject.invoke("getBoundingClientRect")["width"].evalOn(this.activity).get!uint;
+        return domObject.invoke("getBoundingClientRect")["width"].eval().get!uint;
     }
 
 
     final
     uint height() @property
     {
-        return domObject.invoke("getBoundingClientRect")["width"].evalOn(this.activity).get!uint;
+        return domObject.invoke("getBoundingClientRect")["width"].eval().get!uint;
     }
-
-/+
-    /**
-    pos : absolute position
-    */
-    uint[2] pos() @property
-    {
-        activity.runJS(mixin(Lstr!q{
-          (function (){
-            var e = %[domObject.jsExpr%];
-            var x = e.offsetLeft;
-            var y = e.offsetTop;
-
-            while(e = e.offsetParent){
-                x += e.offsetLeft;
-                y += e.offsetTop;
-            }
-
-            _carrierObject_.x = x;
-            _carrierObject_.y = y;
-          }())
-        }));
-
-        uint x = activity.evalJS(q{_carrierObject_.x]}).get!uint;
-        uint y = activity.evalJS(q{_carrierObject_.y}).get!uint;
-        return [x, y];
-    }+/
 
 
     /**
@@ -573,10 +549,7 @@ class HTMLElement
         assert(this.hasId);
     }
     body{
-        auto ca = activity.carrierObject;
-        ca.setProperty("value", JSValue(html));
-        activity.evalJS(mixin(Lstr!
-            q{%[domObject.jsExpr%].innerHTML = _carrierObject_.value; }));
+        (domObject["innerHTML"] = html).run();
     }
 
 
@@ -588,11 +561,7 @@ class HTMLElement
 
     }
     body{
-        auto ca = activity.carrierObject;
-        ca.setProperty("value0", JSValue(pos));
-        ca.setProperty("value1", JSValue(html));
-        activity.evalJS(mixin(Lstr!
-            q{%[domObject.jsExpr%].insertAdjacentHTML(_carrierObject_.value0, _carrierObject_.value1);}));
+        domObject.invoke!"insertAdjacentHTML"(pos, html).run();
     }
 
 
@@ -872,7 +841,7 @@ if(is(Element : HTMLElement) && names.length >= 1)
     {
         super.onLoad(init);
 
-        if(init && _doInit){
+        if(_doInit){
             this.activity.runJS(genSettingEventHandlers(this.id, this.domObject.jsExpr));
         }
     }
@@ -954,19 +923,15 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
         {
             if(value.isBoolean){
                 if(value.get!bool)
-                    activity.runJS(mixin(Lstr!
-                        q{%[_qs%].%[name%] = true;}
-                    ));
+                    (_expr[name] = true).run();
                 else
-                    activity.runJS(mixin(Lstr!
-                        q{%[_qs%].%[name%] = false;}
-                    ));
+                    (_expr[name] = false).run();
             }else{
-                auto carrier = activity.carrierObject;
+                auto carrier = _expr.activity.carrierObject;
                 carrier.setProperty("value", value);
 
-                activity.runJS(mixin(Lstr!
-                    q{%[_qs%].%[name%] = _carrierObject_.value;}
+                _expr.activity.runJS(mixin(Lstr!
+                    q{%[_expr.jsExpr%].%[name%] = _carrierObject_.value;}
                 ));
             }
         }
@@ -974,11 +939,7 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
 
         JSValue opIndex(string name)
         {
-            JSValue jv = activity.evalJS(mixin(Lstr!
-                q{%[_qs%].%[name%];}
-            ));
-
-            return jv;
+            return _expr[name].eval();
         }
 
 
@@ -987,10 +948,7 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
         */
         void innerHTML(string html)
         {
-            auto ca = activity.carrierObject;
-            ca.setProperty("value", JSValue(html));
-            activity.evalJS(mixin(Lstr!
-                q{%[_qs%].innerHTML = _carrierObject_.value; }));
+            (_expr["innerHTML"] = html).run();
         }
 
 
@@ -998,11 +956,8 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
         See also: HTML.insertAdjacentHTML
         */
         void insertAdjacentHTML(string pos, string html)
-        in{
-
-        }
-        body{
-            JSExpression(_qs).invoke("insertAdjacentHTML", pos, html).runOn(activity);
+        {
+            _expr.invoke!"insertAdjacentHTML"(pos, html).run();
         }
 
 
@@ -1049,29 +1004,28 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
         void invoke(T...)(string name, auto ref T args)
         {
           static if(T.length == 0)
-            activity.evalJS(mixin(Lstr!
-                q{%[_qs%].%[name%]();}
+            _expr.activity.evalJS(mixin(Lstr!
+                q{%[_expr.jsExpr%].%[name%]();}
             ));
           else{
-            auto carrier = activity.carrierObject;
+            auto carrier = _expr.activity.carrierObject;
             foreach(i, ref e; args)
                 carrier.setProperty(format("value%s", i), JSValue(e));
 
-            activity.evalJS(mixin(Lstr!
-                q{%[_qs%].%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
+            _expr.activity.evalJS(mixin(Lstr!
+                q{%[_expr.jsExpr%].%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
             ));
           }
         }
 
 
-        Activity activity;
       private:
-        string _qs;
+        JSExpression _expr;
     }
 
     Result res;
-    res.activity = activity;
-    res._qs = mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])});
+    res._expr = JSExpression(mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])}),
+                             activity);
     return res;
 }
 

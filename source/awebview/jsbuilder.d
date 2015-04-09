@@ -50,13 +50,20 @@ struct JSExpression
 
     JSExpression opIndex(string str)
     {
-        return JSExpression(format(`(%s)["%s"]`, _expr, toLiteral(str)), _activity);
+        return JSExpression(format(`(%s)[%s]`, _expr, toLiteral(str)), _activity);
     }
 
 
     JSExpression opIndexAssign(JSExpression rhs, string str)
     {
-        return JSExpression(format(`(%s).["%s"] = %s`, _expr, toLiteral(str), rhs._expr), _activity);
+        return JSExpression(format(`(%s)[%s] = (%s)`, _expr, toLiteral(str), rhs._expr), _activity);
+    }
+
+
+    JSExpression opIndexAssign(T)(T rhs, string str)
+    if(is(typeof(JSExpression.literal(rhs)) == JSExpression))
+    {
+        return opIndexAssign(literal(rhs), str);
     }
 
 
@@ -68,11 +75,18 @@ struct JSExpression
 
     JSExpression opIndexAssign(JSExpression rhs, size_t n)
     {
-        return JSExpression(format(`(%s).[%s] = %s`, _expr, n, rhs._expr), _activity);
+        return JSExpression(format(`(%s)[%s] = (%s)`, _expr, n, rhs._expr), _activity);
     }
 
 
-    JSExpression invoke(T...)(string name, T args)
+    JSExpression opIndexAssign(T)(T rhs, size_t n)
+    if(is(typeof(JSExpression.literal(rhs)) == JSExpression))
+    {
+        return opIndexAssign(literal(rhs), n);
+    }
+
+
+    JSExpression invoke(S, T...)(S name, T args)
     {
         auto app = appender!string();
         app.formattedWrite("(%s).%s(", _expr, name);
@@ -88,6 +102,12 @@ struct JSExpression
         app.put(")");
 
         return JSExpression(app.data, _activity);
+    }
+
+
+    JSExpression invoke(string name, T...)(T args)
+    {
+        return invoke(name, args);
     }
 
 
@@ -125,6 +145,9 @@ struct JSExpression
     {
         return activity.evalJS(_expr).get!T;
     }
+
+
+    Activity activity() @property pure nothrow @safe @nogc { return _activity; }
 
 
   private:

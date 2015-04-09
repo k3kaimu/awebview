@@ -214,8 +214,8 @@ class Select(alias attrs = null)
                 }
 
                 auto app = appender!string();
-                app.put(`<html><head><title>select</title></head><style>tr:hover { background-color: #007bff; color: #000000; }</style>`);
-                app.put(`<body style="margin:0px; padding:0px">`);
+                app.put(`<html><head><title>select</title></head><style>html,body { width: 100%; } tr:hover { background-color: #007bff; color: #000000; min-width:100%; width:100%; }</style>`);
+                app.put(`<body style="margin:0px; padding:0px;">`);
                 app.formattedWrite(`<table id="%1$s" style="border-collapse: collapse; border: inset 1px black;">%2$s</table>`, _sel.id, genRows());
                 app.put(`</body></html>`);
                 return app.data;
@@ -257,17 +257,18 @@ class Select(alias attrs = null)
     override
     void onClick(WeakRef!(const(JSArrayCpp)) args)
     {
-        import std.stdio;
-        writeln("onClick");
         if(_popupMenu is null)
             _popupMenu = makePopupMenu();
 
         auto rec = this.boundingClientRect;
+
+        _popupMenu.elements[this.id].staticProps["style.width"] = rec.width;
+
         if(auto a = cast(SDLPopupActivity)activity){
-            a.popupChild(_popupMenu, rec.x, rec.y + rec.height);
+            a.popupChild(_popupMenu, rec.x, rec.y + rec.height, rec.width, 0);
         }else{
             auto a = cast(SDLApplication)application;
-            a.popupActivity.popupAtRel(_popupMenu, cast(SDLActivity)this.activity, rec.x, rec.y + rec.height);
+            a.popupActivity.popupAtRel(_popupMenu, cast(SDLActivity)this.activity, rec.x, rec.y + rec.height, rec.width, 0);
         }
     }
 

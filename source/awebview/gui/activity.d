@@ -2,6 +2,8 @@ module awebview.gui.activity;
 
 import carbon.utils;
 
+import awebview.jsbuilder;
+
 import awebview.wrapper.websession,
        awebview.wrapper.webview,
        awebview.wrapper.webcore,
@@ -109,6 +111,7 @@ class Activity
             p.page.onDestroy();
         }
 
+        releaseObject("_carrierObject_");
         _view.destroy();
     }
 
@@ -188,6 +191,7 @@ class Activity
     void resize(uint w, uint h)
     {
         this._view.resize(w, h);
+        _nowPage.onResize(w, h);
     }
 
 
@@ -246,6 +250,11 @@ class Activity
     {
         import std.stdio;
         immutable bool isStarted = this.application !is null && this.application.isRunning;
+
+        if(_nowPage !is null && _nowPage.id == id){
+            reload();
+            return;
+        }
 
         auto p = enforce(id in _pages);
 
@@ -318,18 +327,35 @@ class Activity
     }
 
 
+    final
     void runJS(string script)
     {
         _view.executeJS(script, "");
     }
 
 
+    final
+    void runJS(JSExpression jsexpr)
+    {
+        jsexpr.runOn(this);
+    }
+
+
+    final
     JSValue evalJS(string script)
     {
         return _view.executeJSWithRV(script, "");
     }
 
 
+    final
+    void evalJS(JSExpression jsexpr)
+    {
+        jsexpr.evalOn(this);
+    }
+
+
+    final
     WeakRef!JSObject createObject(string name)
     {
         WebString str = name;
@@ -340,13 +366,14 @@ class Activity
     }
 
 
+    final
     void releaseObject(string name)
     {
         import carbon.templates : Lstr;
 
         if(auto p = name in _objects){
-            runJS(mixin(Lstr!q{%[name%] = null;}));
-            _objects[name].opAssign(JSValue.null_);
+            runJS(mixin(Lstr!q{%[name%] = null; delete %[name%];}));
+            _objects.remove(name);
         }
     }
 
@@ -378,6 +405,7 @@ class Activity
     bool isShouldClosed() { return _isShouldClosed; }
 
 
+    final
     void addChild(Activity act)
     {
         _children[act.id] = act;
@@ -598,9 +626,8 @@ class SDLBorderlessActivity : SDLActivity
     override
     void resize(size_t w, size_t h)
     {
-        super.resize(w, h);
-
         SDL_SetWindowSize(this.sdlWindow, w, h);
+        super.resize(w, h);
     }
 }
 
@@ -626,7 +653,7 @@ class SDLPopupActivity : SDLBorderlessActivity
     }
 
 
-    void popup(HTMLPage page, SDLActivity activity, int x, int y, uint w, uint h)
+    void popup(HTMLPage page, SDLActivity activity, int x, int y, uint w = 0, uint h = 0)
     {
         _parent = activity;
         SDL_SetWindowPosition(this.sdlWindow, x, y);
@@ -634,13 +661,11 @@ class SDLPopupActivity : SDLBorderlessActivity
         this.load(page);
         SDL_RaiseWindow(this.sdlWindow);
 
-        if(w == 0 && h == 0){
-            _fitting = true;
-        }
-        else{
-            _fitting = false;
+        _wfitting = w == 0;
+        _hfitting = h == 0;
+
+        if(!_wfitting && !_hfitting)
             this.resize(w, h);
-        }
 
         _x = x;
         _y = y;
@@ -689,17 +714,17 @@ class SDLPopupActivity : SDLBorderlessActivity
 
     void popupChild(HTMLPage page, int relX, int relY, uint w = 0, uint h = 0)
     {
-        if(_child is null){
-            _child = new SDLPopupActivity(_idx + 1, _session, _flags);
-            this.application.addActivity(_child);
-        }
-
         popupChildAtAbs(page, _x + relX, _y + relY, w, h);
     }
 
 
     void popupChildAtAbs(HTMLPage page, uint x, uint y, uint w = 0, uint h = 0)
     {
+        if(_child is null){
+            _child = new SDLPopupActivity(_idx + 1, _session, _flags);
+            this.application.addActivity(_child);
+        }
+
         _child.popup(page, this, x, y, w, h);
     }
 
@@ -723,7 +748,8 @@ class SDLPopupActivity : SDLBorderlessActivity
         _y = 0;
         _w = 0;
         _h = 0;
-        _fitting = false;
+        _wfitting = false;
+        _hfitting = false;
         this.resize(0, 0);
         _parent = null;
 
@@ -736,9 +762,15 @@ class SDLPopupActivity : SDLBorderlessActivity
     {
         super.onUpdate();
 
-        if(_fitting){
-            uint sw = evalJS(q{document.documentElement.scrollWidth}).get!uint;
-            uint sh = evalJS(q{document.documentElement.scrollHeight}).get!uint;
+        if(_wfitting || _hfitting){
+            uint sw = _w,
+                 sh = _h;
+
+            if(_wfitting)
+                sw = evalJS(q{document.documentElement.scrollWidth}).get!uint;
+
+            if(_hfitting)
+                sh = evalJS(q{document.documentElement.scrollHeight}).get!uint;
 
             if(_w != sw || _h != sh){
                 this.resize(sw, sh);
@@ -784,7 +816,7 @@ class SDLPopupActivity : SDLBorderlessActivity
     WebSession _session;
     uint _flags;
 
-    bool _fitting;
+    bool _wfitting, _hfitting;
     uint _x, _y;
     uint _w, _h;
 

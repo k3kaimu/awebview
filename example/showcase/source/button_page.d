@@ -29,6 +29,8 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
             button.onClick.connect!"onClickDiv"(this);
             return button;
         }();
+
+        _menu = new PopupMenu("PopupMenuPage");
     }
 
 
@@ -36,8 +38,7 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
     {
         //activity.to!SDLActivity.title = "You clicked input_button";
         auto popup = application.to!SDLApplication.popupActivity;
-        auto page = new PopupMenu("PopupMenuPage");
-        popup.popup(page, this.activity.to!SDLActivity);
+        popup.popup(_menu, this.activity.to!SDLActivity);
     }
 
 
@@ -57,9 +58,12 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
     {
         auto popup = application.to!SDLApplication.popupActivity;
         auto innerH = popup.nowPage.to!ContextMenuListPage.offsetTop(2);
-        auto page = new PopupMenu("PopupMenuPage");
-        popup.popupChildRight(page, innerH);
+        popup.popupChildRight(_menu, innerH);
     }
+
+
+  private:
+    PopupMenu _menu;
 }
 
 
