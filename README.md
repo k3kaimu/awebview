@@ -58,9 +58,3 @@ topPage ~= btn1;
 </body>
 </html>
 ~~~~~~~~~~~~~~~
-
-~~~~~~~~~~~html
-<!-- views/my_btn.html -->
-<!-- -->
-<input type="button" class="btn btn-xs btn-primary" id="%[id%]" onclick="%[id%].onClick()" value="%[id%]">
-~~~~~~~~~~~~~~~
