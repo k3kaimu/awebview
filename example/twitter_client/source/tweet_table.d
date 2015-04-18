@@ -118,6 +118,9 @@ class TweetTable : TemplateHTMLElement!(HTMLElement, HTMLTableFormat)
         pf.ths = _ths;
         pf.tds = _tds;
 
+        if(pf.tds.length > 100)
+            pf.tds = pf.tds[$-100 .. $];
+
         if(auto p = this.id in app.savedData)
             pf.parentData = *p;
 
