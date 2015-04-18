@@ -32,7 +32,7 @@ body {
 
 #div_iptTweetText {
     height: 100px;
-    width: jsExpr(doc.documentElement.clientWidth - 100);
+    width: jsExpr(docElem.clientWidth - 100);
     vertical-align: top;
 }
 
@@ -54,15 +54,15 @@ body {
 }
 
 #div_tweetTable {
-    width: jsExpr(doc.documentElement.clientWidth);
+    width: jsExpr(docElem.clientWidth);
 }
 
 #tweetTable {
-    width: jsExpr(doc.documentElement.clientWidth - 20); /*calc(100%w - 20px);*/
+    width: jsExpr(docElem.clientWidth - 20); /*calc(100%w - 20px);*/
 }
 
 #tweetTable tr {
-    width: jsExpr(doc.documentElement.clientWidth);
+    width: jsExpr(docElem.clientWidth);
 }
 
 #tweetTable tr > th:nth-child(1){
@@ -74,13 +74,13 @@ body {
 }
 
 #tweetTable tr > th:nth-child(3){
-    width: jsExpr(doc.documentElement.clientWidth - 300); /*calc(100%w - 300px);*/
+    width: jsExpr(docElem.clientWidth - 300); /*calc(100%w - 300px);*/
 }
 
 #tweetTable tbody {
     display: block;
     overflow-y: scroll;
-    height: jsExpr(doc.documentElement.clientHeight - 160);
+    height: jsExpr(docElem.clientHeight - 160);
     width: 100%;
 }
 

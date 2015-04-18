@@ -19,6 +19,9 @@ function cssResize(doc, win, _sel_, _prop_, _expr_)
     var _exprString_ = "e.style." + _prop_ + " = (" + _expr_ + ") + 'px'";
     var _qs_ = doc.querySelectorAll(_sel_);
 
+    var docElem = document.documentElement;
+    var body = document.body;
+
     for(var _i_ = 0, _len_ = _qs_.length; _i_ < _len_; ++_i_){
         var e = _qs_[_i_];
         eval(_exprString_);
