@@ -16,15 +16,16 @@ For example...
 auto topPage = new TemplateHTMLPage!(import(`top_view.html`))(`Top`);
 
 // generate html button from my_btn.html and create a JS global object named `btn1`.
-auto btn1 = new GenericButton!(import(`my_btn.html`))(`btn1`);
+auto btn1 = new InputButton!(["class": "btn btn-xs btn-primary"])(`btn1`);
+
+// DOM access. This code is translated to `document.getElementById("btn1").value = ...;`
+btn1["value"] = "Click me";
 
 // handle onclick event
 size_t cnt;
-btn1.onClick.strongConnect(delegate(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
-{
+btn1.onClick.strongConnect((ctx, args){
     ++cnt;
 
-    // DOM access. This code is translated to `document.getElementById("btn1").value = ...;`
     btn1["value"] = format("cnt: %s", cnt);
 });
 
