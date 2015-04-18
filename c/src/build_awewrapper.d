@@ -19,6 +19,10 @@ void buildAweWrapperCXX()
   {
     auto cxx = execute(["g++", "-c", "-fno-rtti", srcFileName]);
   }
+  else version(OSX)
+  {
+    auto cxx = execute(["clang", "-c", "-fno-rtti", srcFileName]);
+  }
 
     writeln(cxx.output);
     assert(cxx.status == 0, "Failed to build");

@@ -28,11 +28,18 @@
                                   "bin/win32/libEGL.dll",
                                   "bin/win32/libGLESv2.dll",
                                   "bin/win32/xinput9_1_0.dll",
-                                  "bin/win32/SDL2.dll"],
+                                  "bin/win32/SDL2.dll",
+                                  "bin/win32/libcurl.dll"],
       },
 
       {
         "name": "copyCommand",
+        "copyFiles": ["c/src/build_awewrapper.d",
+                      "c/src/unzip_parallel.d",
+                      "c/src/awesomium4d_cw.cpp",
+                      "c/Awesomium.zip"
+
+        ],
         "copyFiles-windows-x86": ["bin/win32/awesomium_omf.lib",
                                   "bin/win32/stlp45dm_static.lib",
                                   "c/src/build_awewrapper.d",
@@ -53,5 +60,6 @@
         "carbon": "~>1.3.0",
         "derelict-sdl2": "~>1.9.4",
         "msgpack-d": "~>0.9.6",
+        "pegged": "~>0.2.1"
     }
 }

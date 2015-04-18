@@ -398,7 +398,7 @@ class SDLApplication : Application
                     break LInf;
             }
 
-            Thread.sleep(dur!"msecs"(10));
+            Thread.sleep(dur!"msecs"(5));
             wc.update();
         }
         _isRunning = false;

@@ -19,6 +19,10 @@ import awebview.gui.html,
        derelict.sdl2.sdl;
 
 import awebview.gui.menulistener;
+import awebview.gui.viewlistener;
+import awebview.gui.scripthelper;
+
+import awebview.cssgrammar;
 
 import std.exception,
        std.string;
@@ -45,8 +49,13 @@ class Activity
     {
         _app = app;
 
-        auto ml = new SDLMenuListener(_app);
+        auto ml = new MenuListener(_app);
         _view.setMenuListener(ml.cppObj);
+
+        auto vl = new ViewListener(_app);
+        _view.setViewListener(vl.cppObj);
+
+        _scriptHelper = createScriptHelper(this);
 
         foreach(k, p; _pages.maybeModified)
             p.page.onStart(this);
@@ -428,6 +437,7 @@ class Activity
     WebView _view;
     HTMLPage _nowPage;
     MethodHandler _methodHandler;
+    ScriptHelper _scriptHelper;
     JSValue[string] _objects;
     bool _isAttached;
     bool _isShouldClosed;

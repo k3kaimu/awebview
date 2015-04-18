@@ -456,6 +456,12 @@ struct WebStringCpp
     }
 
 
+    const(wchar)[] opSlice(size_t a, size_t b) const nothrow @property @nogc
+    {
+        return this.data[a .. b];
+    }
+
+
     void opOpAssign(string op : "~")(auto ref const WebStringCpp s) nothrow @nogc
     {
         WebStringMember.Append(this.cppObj, s.cppObj);

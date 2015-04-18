@@ -16,6 +16,24 @@ public import awebview.wrapper.constants,
               awebview.wrapper.webstringarray,
               awebview.wrapper.weburl,
               awebview.wrapper.webview,
-              awebview.wrapper.sys;
+              awebview.wrapper.sys,
+              awebview.wrapper.webviewlistener;
 
-public import awebview.wrapper.cpp : JSObjectType;
+public import awebview.wrapper.cpp : JSObjectType,
+                                     Rect,
+                                     WebMenuItemType,
+                                     Cursor,
+                                     FocusedElementType,
+                                     TerminationStatus,
+                                     TextInputType,
+                                     WebFileChooserMode,
+                                     MediaType,
+                                     MediaState,
+                                     CanEditFlags,
+                                     CertError,
+                                     SecurityStatus,
+                                     ContentStatusFlags,
+                                     LogSeverity,
+                                     WebTouchPointState,
+                                     WebViewType,
+                                     MouseButton;

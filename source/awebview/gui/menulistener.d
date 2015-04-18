@@ -8,7 +8,7 @@ import awebview.wrapper.cpp;
 import std.stdio;
 
 
-class SDLMenuListener : awebview.wrapper.webviewlistener.WebViewListener.Menu
+class MenuListener : awebview.wrapper.webviewlistener.WebViewListener.Menu
 {
     this(Application app)
     {
@@ -17,9 +17,9 @@ class SDLMenuListener : awebview.wrapper.webviewlistener.WebViewListener.Menu
 
 
     override
-    void onShowPopupMenu(Activity activity, const Awesomium.WebPopupMenuInfo* p) {}
+    void onShowPopupMenu(Activity activity, const Awesomium.WebPopupMenuInfo* p) { /*writeln(__FUNCTION__);*/ }
 
 
     override
-    void onShowContextMenu(Activity activity, const Awesomium.WebContextMenuInfo* p) {}
+    void onShowContextMenu(Activity activity, const Awesomium.WebContextMenuInfo* p) { /*writeln(__FUNCTION__);*/ }
 }

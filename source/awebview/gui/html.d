@@ -8,6 +8,7 @@ import awebview.gui.application;
 import awebview.wrapper;
 
 import awebview.jsbuilder;
+import awebview.cssgrammar;
 
 import std.variant;
 import std.typecons;
@@ -111,10 +112,25 @@ abstract class HTMLPage
     {
         foreach(key, elem; elements.maybeModified)
             elem.onLoad(isInit);
+
+        _clientWidth = activity.evalJS(`document.documentElement.clientWidth`).get!uint;
+        _clientHeight = activity.evalJS(`document.documentElement.clientHeight`).get!uint;
+        _resizeStatements = generateResizeStatements(this.activity);
+        onResize(activity.width, activity.height);
     }
 
 
-    void onUpdate() {}
+    void onUpdate()
+    {
+        auto newW = activity.evalJS(`document.documentElement.clientWidth`).get!uint;
+        auto newH = activity.evalJS(`document.documentElement.clientHeight`).get!uint;
+
+        if(newW != _clientWidth || newH != _clientHeight)
+            onResize(activity.width, activity.height);
+
+        _clientWidth = newW;
+        _clientHeight = newH;
+    }
 
 
     void onDetach()
@@ -131,12 +147,20 @@ abstract class HTMLPage
     }
 
 
-    void onResize(size_t w, size_t h) {}
+    void onResize(size_t w, size_t h)
+    {
+        this.activity.runJS(_resizeStatements);
+    }
 
 
   private:
     Activity _activity;
     string _id;
+
+    size_t _clientWidth;
+    size_t _clientHeight;
+
+    string _resizeStatements;
 }
 
 
@@ -213,6 +237,76 @@ class TemplateHTMLPage(string form) : HTMLPage
     }
 
 
+    final
+    auto js(this This)() @property pure nothrow @safe @nogc inout
+    {
+        static struct Result
+        {
+            string html() const
+            {
+                auto app = appender!string();
+                foreach(_, e; _this._js)
+                    app.formattedWrite(`<script src="%s"></script>`);
+                return app.data;
+            }
+
+
+            alias html this;
+
+
+            void opOpAssign(string op : "~")(string src)
+            {
+                import std.path : baseName;
+
+                auto bn = src.baseName;
+                _this._js[bn] = src;
+            }
+
+
+          private:
+            This _this;
+        }
+
+
+        return Result(this);
+    }
+
+
+    final
+    auto css(this This)() @property pure nothrow @safe @nogc inout
+    {
+        static struct Result
+        {
+            string html() const
+            {
+                auto app = appender!string();
+                foreach(_, e; _this._css)
+                    app.formattedWrite(`<link rel="stylesheet" href="%s">`);
+                return app.data;
+            }
+
+
+            alias html this;
+
+
+            void opOpAssign(string op : "~")(string src)
+            {
+                import std.path : baseName;
+
+                auto bn = src.baseName;
+                _this._css[bn] = src;
+            }
+
+
+          private:
+            This _this;
+        }
+
+
+        return Result(this);
+    }
+
+
     override
     @property
     string html() const
@@ -245,6 +339,8 @@ class TemplateHTMLPage(string form) : HTMLPage
   private:
     HTMLElement[string] _elems;
     Variant[string] _exts;
+    string[string] _js;
+    string[string] _css;
 }
 
 
@@ -1027,55 +1123,4 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
     res._expr = JSExpression(mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])}),
                              activity);
     return res;
-}
-
-
-struct WebLibrary
-{
-    template loadJS(string src)
-    {
-        static this()
-        {
-            _defaultJS[src] = true;
-        }
-
-        void loadJS() {}
-    }
-
-
-    template loadCSS(string src)
-    {
-        static this()
-        {
-            _defaultCSS[src] = true;
-        }
-
-        void loadCSS() {}
-    }
-
-
-    @property
-    string js()
-    {
-        auto app = appender!string();
-        foreach(e, _; _defaultJS)
-            app.formattedWrite(`<script src='%s' type="text/javascript"></script>`, e);
-        return app.data;
-    }
-
-
-    @property
-    string css()
-    {
-        auto app = appender!string();
-        foreach(e, _; _defaultCSS)
-            app.formattedWrite(`<link href='%s' type="text/css" rel="stylesheet">`, e);
-        return app.data;
-    }
-
-
-  private:
-  static:
-    bool[string] _defaultJS;
-    bool[string] _defaultCSS;
 }

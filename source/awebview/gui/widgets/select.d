@@ -1,4 +1,4 @@
-module awebview.gui.select;
+module awebview.gui.widgets.select;
 
 
 import awebview.gui.html;

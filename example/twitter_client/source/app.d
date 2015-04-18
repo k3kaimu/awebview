@@ -28,11 +28,6 @@ void main()
     auto app = SDLApplication.instance;
 
     auto pref = WebPreferences.recommended;
-    if(exists("style.css"))
-        pref.userStylesheet = std.file.readText("style.css");
-
-    if(exists("script.js"))
-        pref.userScript = std.file.readText("script.js");
 
     app.createActivity(pref, delegate(WebSession session){
         // create window-view

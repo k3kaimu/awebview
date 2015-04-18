@@ -1,5 +1,6 @@
 * {
 font-family:'ヒラギノ角ゴ Pro W3', 'Hiragino Kaku Gothic Pro', メイリオ, Meiryo, 'ＭＳ Ｐゴシック', sans-serif;
+font-size: 11pt;
 }
 
 * { margin: 0; padding: 0; }
@@ -21,7 +22,7 @@ body {
 #div_TweetArea {
     display: table;
     width: 100%;
-    height: 100;
+    height: 100px;
     text-align: right;
 }
 
@@ -29,12 +30,9 @@ body {
     display: table-cell;
 }
 
-
-#div_TweetArea { }
-
-
 #div_iptTweetText {
     height: 100px;
+    width: jsExpr(doc.documentElement.clientWidth - 100);
     vertical-align: top;
 }
 
@@ -52,19 +50,19 @@ body {
 
 #btnTweet {
     height: 100px;
-    width: 100%;
+    width: 100px;
 }
 
 #div_tweetTable {
-    width: 100%;
+    width: jsExpr(doc.documentElement.clientWidth);
 }
 
 #tweetTable {
-    width: 100%;
+    width: jsExpr(doc.documentElement.clientWidth - 20); /*calc(100%w - 20px);*/
 }
 
 #tweetTable tr {
-    width: 100%;
+    width: jsExpr(doc.documentElement.clientWidth);
 }
 
 #tweetTable tr > th:nth-child(1){
@@ -73,4 +71,25 @@ body {
 
 #tweetTable tr > th:nth-child(2){
     width: 200px;
+}
+
+#tweetTable tr > th:nth-child(3){
+    width: jsExpr(doc.documentElement.clientWidth - 300); /*calc(100%w - 300px);*/
+}
+
+#tweetTable tbody {
+    display: block;
+    overflow-y: scroll;
+    height: jsExpr(doc.documentElement.clientHeight - 160);
+    width: 100%;
+}
+
+#tweetTable thead {
+    display: block;
+    width: 100%;
+}
+
+#tweetTable tbody tr td:nth-child(1) img {
+    width: 40px;
+    height: 40px;
 }

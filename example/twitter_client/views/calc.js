@@ -24,13 +24,15 @@ fillcalc v0.1.0 - (c) Robert Weber, freely distributable under the terms of the 
 	IMPORTS = new RegExp('@import .*?;', 'gi'),
 	CHARSET = new RegExp('@charset .*?;', 'gi'),
 
-	PERCENT = /\d+%/,
+	PERCENT = /[\d\.]+%/,
+	WPERCENT = /[\d\.]+%w/,
+	HPERCENT = /[\d\.]+%h/,
 	PT = /\d+pt/,
 	PIXEL = /(\d+)px/g,
-	REMEM = /\d+r?em/,
-	REM = /\d+rem/,
-	EM = /\d+em/,
-	MATH_EXP = /[\+\-\/\*]?\d+(px|%|em|rem)?/g,
+	REMEM = /[\d\.]+r?em/,
+	REM = /[\d\.]+rem/,
+	EM = /[\d\.]+em/,
+	MATH_EXP = /[\+\-\/\*]?[\d\.]+(%w|%h|px|%|em|rem)?/g,
 	PLACEHOLDER = '$1',
 	ONLYNUMBERS = /[\s\-0-9]/g,
 
@@ -202,46 +204,50 @@ fillcalc v0.1.0 - (c) Robert Weber, freely distributable under the terms of the 
 	},
 
 	loadStylesheets = function(urls){
-		var xhr;
+		// var xhr;
 		var index = 0;
 		var len = urls.length;
 		var cssTexts = [];
 
-		if ( win.XMLHttpRequest ) {
-
-			xhr = new XMLHttpRequest();
-		}
-		else {
-
-			try {
-
-				xhr = new ActiveXObject('Microsoft.XMLHTTP');
-
-			} catch(e) {
-
-				xhr = null;
-			}
+		for(; index < len; index++) {
+			cssTexts.push(ScriptHelper.callDLangFunc("std.net.curl.get", urls[index]));
 		}
 
-		if (xhr) {
+		// if ( win.XMLHttpRequest ) {
 
-			for (; index < len; index++) {
+		// 	xhr = new XMLHttpRequest();
+		// }
+		// else {
 
-				try {
+		// 	try {
 
-					xhr.open('GET', urls[index], false);
-					xhr.send();
+		// 		xhr = new ActiveXObject('Microsoft.XMLHTTP');
 
-					if ( xhr.status === 200 ) {
-						cssTexts.push( xhr.responseText );
-					}
+		// 	} catch(e) {
 
-				} catch(e) {
-					console.log('Error making request for file ' + urls[index] + ': ' + e.message);
-				}
+		// 		xhr = null;
+		// 	}
+		// }
 
-			}
-		}
+		// if (xhr) {
+
+		// 	for (; index < len; index++) {
+
+		// 		try {
+
+		// 			xhr.open('GET', urls[index], false);
+		// 			xhr.send();
+
+		// 			if ( xhr.status === 200 ) {
+		// 				cssTexts.push( xhr.responseText );
+		// 			}
+
+		// 		} catch(e) {
+		// 			console.log('Error making request for file ' + urls[index] + ': ' + e.message);
+		// 		}
+
+		// 	}
+		// }
 
 		if (cssTexts.length > 0 ) {
 			parseStylesheets(cssTexts);
@@ -254,7 +260,12 @@ fillcalc v0.1.0 - (c) Robert Weber, freely distributable under the terms of the 
 
 		for (; index < len; index++) {
 
-			texts[index] = texts[index].replace(COMMENTS, EMPTY).replace(CHARSET, EMPTY).replace(IMPORTS, EMPTY).replace(KEYFRAMES, EMPTY).replace(FONTFACE, EMPTY);
+			try{
+				texts[index] = texts[index].replace(COMMENTS, EMPTY).replace(CHARSET, EMPTY).replace(IMPORTS, EMPTY).replace(KEYFRAMES, EMPTY).replace(FONTFACE, EMPTY);
+			}
+			catch(e){
+				console.log(e.message);
+			}
 
 			dotheCalc( parseCSS(texts[index]) );
 		}
@@ -351,22 +362,38 @@ fillcalc v0.1.0 - (c) Robert Weber, freely distributable under the terms of the 
 		var calc = function( obj ) {
 			var i = 0;
 			var len = obj.elements.length;
-			var refValue, modifier, matches, l, j, result;
-
-			var formula = obj.formula.replace(PIXEL, PLACEHOLDER);
+			var refValue, modifier, matches, l, j, result, formula;
 
 			for (; i < len; i++) {
 
+				formula = obj.formula.replace(PIXEL, PLACEHOLDER);
 				matches = formula.match(MATH_EXP);
 				l = matches.length;
 				j = 0;
 
 				for (; j < l; j++) {
 
-					if ( matches[j].match(PERCENT) ) {
+					modifier = null;
+
+					console.log(matches[j]);
+					if( matches[j].match(WPERCENT) ) {
+						// refValue = obj.elements[i].parentNode.clientWidth;
+						refValue = doc.body.clientWidth;
+
+						modifier = parseFloat(matches[j], 10) / 100;
+					}
+					else if( matches[j].match(HPERCENT) ) {
+						// refValue = obj.elements[i].parentNode.clientHeight;
+						refValue = doc.body.clientHeight;
+						console.log(refValue);
+
+						modifier = parseFloat(matches[j], 10) / 100;
+					}
+					else if ( matches[j].match(PERCENT) ) {
 
 						refValue = obj.elements[i].parentNode.clientWidth;
-						modifier = parseInt(matches[j], 10) / 100;
+
+						modifier = parseFloat(matches[j], 10) / 100;
 					}
 
 					if ( matches[j].match(EM) ) {
@@ -378,7 +405,7 @@ fillcalc v0.1.0 - (c) Robert Weber, freely distributable under the terms of the 
 							refValue = Math.round( parseInt(refValue.replace(/pt/, ''), 10) * 1.333333333 );
 						}
 
-						modifier = parseInt(matches[j], 10);
+						modifier = parseFloat(matches[j], 10);
 					}
 
 					if ( matches[j].match(REM) ) {
@@ -396,7 +423,7 @@ fillcalc v0.1.0 - (c) Robert Weber, freely distributable under the terms of the 
 							refValue = parseInt( utilities.getStyle( doc.body , FONTSIZE).replace(/px/, EMPTY ), 10);
 						}
 
-						modifier = parseInt(matches[j], 10);
+						modifier = parseFloat(matches[j], 10);
 					}
 
 					if ( modifier ) {
@@ -480,8 +507,8 @@ fillcalc v0.1.0 - (c) Robert Weber, freely distributable under the terms of the 
 
 	// Libs and Helpers
 
-	// import libs/contentloaded.js
-	// import libs/raf.js
+	function contentLoaded(b,i){var j=false,k=true,a=b.document,l=a.documentElement,f=a.addEventListener,h=f?'addEventListener':'attachEvent',n=f?'removeEventListener':'detachEvent',g=f?'':'on',c=function(d){if(d.type=='readystatechange'&&a.readyState!='complete')return;(d.type=='load'?b:a)[n](g+d.type,c,false);if(!j&&(j=true))i.call(b,d.type||d)},m=function(){try{l.doScroll('left')}catch(e){setTimeout(m,50);return}c('poll')};if(a.readyState=='complete')i.call(b,'lazy');else{if(!f&&l.doScroll){try{k=!b.frameElement}catch(e){}if(k)m()}a[h](g+'DOMContentLoaded',c,false);a[h](g+'readystatechange',c,false);b[h](g+'load',c,false)}}
+	(function(){var e=0;var t=["ms","moz","webkit","o"];for(var n=0;n<t.length&&!win.requestAnimationFrame;++n){win.requestAnimationFrame=win[t[n]+"RequestAnimationFrame"];win.cancelAnimationFrame=win[t[n]+"CancelAnimationFrame"]||win[t[n]+"CancelRequestAnimationFrame"]}if(!win.requestAnimationFrame)win.requestAnimationFrame=function(t,n){var r=(new Date).getTime();var i=Math.max(0,16-(r-e));var s=win.setTimeout(function(){t(r+i)},i);e=r+i;return s};if(!win.cancelAnimationFrame)win.cancelAnimationFrame=function(e){clearTimeout(e)}})()
 
 
 	})(window, document);

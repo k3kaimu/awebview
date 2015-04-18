@@ -54,7 +54,9 @@ struct WebView
     @property
     NativeWindow window() { return WebViewMember.window(_cppObj); }
 
-    //void setViewListener(Awesomium.WebViewListener.View);
+    void setViewListener(Awesomium.WebViewListener.View vl)
+    { WebViewMember.set_view_listener(_cppObj, vl); }
+
     //void setLoadListener(Awesomium.WebViewListener.Load);
     //void setProcessListener(Awesomium.WebViewListener.Process);
 

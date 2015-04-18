@@ -171,11 +171,11 @@ void unzipParallel (string pathname , string destDir){
 enum ZIP_MAGIC_66000 = 66000;
 
 ArchiveMember2[] getArchiveDirectory (ref ZipArchive2 za,  std.stream.File f)
-{   int iend;
-    int i;
-    int endcommentlength;
-    uint directorySize;
-    uint directoryOffset;
+{   ptrdiff_t iend;
+    ptrdiff_t i;
+    ptrdiff_t endcommentlength;
+    size_t directorySize;
+    size_t directoryOffset;
 
     ulong flen = f.size();
 
@@ -195,7 +195,7 @@ ArchiveMember2[] getArchiveDirectory (ref ZipArchive2 za,  std.stream.File f)
     auto data = new ubyte[fsz];
 
     // some utility functions that reference the local auto data just created
-    ushort getUshort(int i)
+    ushort getUshort(size_t i)
     {
         version (LittleEndian)
         {
@@ -209,7 +209,7 @@ ArchiveMember2[] getArchiveDirectory (ref ZipArchive2 za,  std.stream.File f)
         }
     }
 
-    uint getUint(int i)
+    uint getUint(size_t i)
     {
         version (LittleEndian)
         {
@@ -339,7 +339,7 @@ void readCompressedData(ulong endrecOffset, ref ArchiveMember2 de, std.stream.Fi
 
     /* ============ Utility operations that work on the local data array =================== */
 
-    ushort getUshort(int i)
+    ushort getUshort(size_t i)
     {
         version (LittleEndian)
         {

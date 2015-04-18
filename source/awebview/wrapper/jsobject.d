@@ -228,25 +228,6 @@ struct JSObject
     }
 
 
-    /**
-    set & get properties
-    */
-    JSValue opIndex(in string name) const nothrow @nogc
-    in{
-        assert(hasProperty(name));
-    }
-    body{
-        return getProperty(name);
-    }
-
-
-    /// ditto
-    void opIndexAssign(in string name, in JSValue v) nothrow @nogc
-    {
-        setProperty(name, v);
-    }
-
-
     static
     auto weakRef(H)(H ws)
     if(is(H : const(CppObj)))
