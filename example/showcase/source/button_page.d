@@ -10,6 +10,7 @@ import std.conv;
 
 import carbon.utils;
 import carbon.nonametype;
+import carbon.functional;
 
 class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
 {
@@ -17,18 +18,14 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
     {
         super("buttonPage", null);
 
-        this ~= (){
-            auto button = new InputButton!()("input_button");
-            button.staticProps["value"] = "Click me!";
-            button.onClick.connect!"onClickInputButton"(this);
-            return button;
-        }();
+        this ~= (new InputButton!()("input_button")).observe!((a){
+            a.staticProps["value"] = "Click me!";
+            a.onClick.connect!"onClickInputButton"(this);
+        });
 
-        this ~= (){
-            auto button = new GenericButton!(`<div id="%[id%]">Click me!</div>`)("div_button");
-            button.onClick.connect!"onClickDiv"(this);
-            return button;
-        }();
+        this ~= (new GenericButton!(`<div id="%[id%]">Click me!</div>`)("div_button")).observe!((a){
+            a.onClick.connect!"onClickDiv"(this);
+        });
 
         _menu = new PopupMenu("PopupMenuPage");
     }
@@ -36,7 +33,6 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
 
     void onClickInputButton(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
-        //activity.to!SDLActivity.title = "You clicked input_button";
         auto popup = application.to!SDLApplication.popupActivity;
         popup.popup(_menu, this.activity.to!SDLActivity);
     }
@@ -49,7 +45,9 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
                 "fooo",
                 "foooo000",
             '-',
-                (btn){btn.onMouseOver.connect!"onMouseOverMenuItemDiv"(this); return btn;}(new AssumeImplemented!(DeclDefSignals!(TemplateHTMLElement!(`<div id="%[id%]">Click me!</div>`), "onMouseOver"))("div_button2", true)));
+                (new AssumeImplemented!(DeclDefSignals!(TemplateHTMLElement!(`<div id="%[id%]">Click me!</div>`), "onMouseOver"))("div_button2", true))
+                .observe!((a){ a.onMouseOver.connect!"onMouseOverMenuItemDiv"(this); })
+            );
         popup.popup(page, this.activity.to!SDLActivity);
     }
 

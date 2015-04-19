@@ -11,6 +11,8 @@ import awebview.gui.application;
 
 import graphite.twitter;
 
+import carbon.functional;
+
 
 class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
 {
@@ -25,22 +27,17 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         this ~= new InputText!()("iptCnsKey");
         this ~= new InputText!()("iptCnsSct");
 
-        this ~= (){
-            auto btn = new NormalButton("btnOpenBrowser");
-            btn.onClick.connect!"onClickOpenBrowser"(this);
-            btn.staticProps["value"] = "ブラウザで開く";
-            return btn;
-        }();
+        this ~= (new NormalButton("btnOpenBrowser")).observe!((a){
+            a.onClick.connect!"onClickOpenBrowser"(this);
+            a.staticProps["value"] = "ブラウザで開く";
+        });
 
+        this ~= (new NormalButton("btnDoOAuth")).observe!((a){
+            a.onClick.connect!"onClickDoOAuth"(this);
+            a.staticProps["value"] = "認証";
+        });
 
         this ~= new InputText!()("iptPinCode");
-
-        this ~= (){
-            auto btn = new NormalButton("btnDoOAuth");
-            btn.onClick.connect!"onClickDoOAuth"(this);
-            btn.staticProps["value"] = "認証";
-            return btn;
-        }();
     }
 
 

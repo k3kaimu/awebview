@@ -6,7 +6,6 @@ import std.json;
 import std.typecons;
 import std.stdio;
 
-
 import awebview.wrapper;
 import awebview.gui.html;
 import awebview.gui.datapack;
@@ -16,6 +15,8 @@ import awebview.gui.widgets.button;
 import awebview.gui.widgets.text;
 
 import graphite.twitter;
+
+import carbon.functional;
 
 import msgpack;
 import lock_free.dlist;
@@ -46,12 +47,10 @@ class MainPage :  TemplateHTMLPage!(import(`main_page.html`))
 
         this ~= new TweetTextArea(`iptTweetText`);
 
-        this ~= (){
-            auto btn = new NormalButton(`btnTweet`);
-            btn.onClick.connect!"onClickTweet"(this);
-            btn.staticProps["value"] = "ツイート";
-            return btn;
-        }();
+        this ~= (new NormalButton(`btnTweet`)).observe!((a){
+            a.onClick.connect!"onClickTweet"(this);
+            a.staticProps["value"] = "ツイート";
+        });
     }
 
 

@@ -5,6 +5,7 @@ import awebview.gui.widgets.button;
 import awebview.wrapper;
 
 import carbon.utils;
+import carbon.functional;
 
 
 void main()
@@ -32,33 +33,25 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
     {
         super("topPage", null);
 
-        this ~= (){
-            auto btn = new InputButton!()("open_new");
-            btn.staticProps["value"] = "Open new window";
-            btn.onClick.connect!"onClickOpenWindow"(this);
-            return btn;
-        }();
+        this ~= (new InputButton!()("open_new")).observe!((a){
+            a.staticProps["value"] = "Open new window";
+            a.onClick.connect!"onClickOpenWindow"(this);
+        });
 
-        this ~= (){
-            auto btn = new InputButton!()("close_all");
-            btn.staticProps["value"] = "Close all windows";
-            btn.onClick.connect!"onClickCloseAll"(this);
-            return btn;
-        }();
+        this ~= (new InputButton!()("close_all")).observe!((a){
+            a.staticProps["value"] = "Close all windows";
+            a.onClick.connect!"onClickCloseAll"(this);
+        });
 
-        this ~= (){
-            auto btn = new InputButton!()("show_all");
-            btn.staticProps["value"] = "Show all windows";
-            btn.onClick.connect!"onClickShowAll"(this);
-            return btn;
-        }();
+        this ~= (new InputButton!()("show_all")).observe!((a){
+            a.staticProps["value"] = "Show all windows";
+            a.onClick.connect!"onClickShowAll"(this);
+        });
 
-        this ~= (){
-            auto btn = new InputButton!()("hide_all");
-            btn.staticProps["value"] = "Hide all windows";
-            btn.onClick.connect!"onClickHideAll"(this);
-            return btn;
-        }();
+        this ~= (new InputButton!()("hide_all")).observe!((a){
+            a.staticProps["value"] = "Hide all windows";
+            a.onClick.connect!"onClickHideAll"(this);
+        });
     }
 
 
@@ -115,12 +108,10 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
         {
             super("hello", null);
 
-            this ~= (){
-                auto btn = new InputButton!()("close_this");
-                btn.staticProps["value"] = "Close this window";
-                btn.onClick.strongConnect(delegate(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args){ activity.close(); });
-                return btn;
-            }();
+            this ~= (new InputButton!()("close_this")).observe!((a){
+                a.staticProps["value"] = "Close this window";
+                a.onClick.strongConnect(delegate(ctx, args){ activity.close(); });
+            });
         }
     }
 

@@ -9,6 +9,7 @@ import button_page;
 import switchlink;
 
 import std.conv;
+import carbon.functional;
 
 void main()
 {
@@ -36,21 +37,16 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
     {
         super("mainPage", null);
 
-        this ~= (){
-            auto button = new InputButton!()("open_showcase_button");
-            button.staticProps["value"] = "Open showcase";
-            button.onClick.connect!"onClickOpenShowcase"(this);
-            return button;
-        }();
+        this ~= (new InputButton!()("open_showcase_button")).observe!((a){
+            a.staticProps["value"] = "Open showcase";
+            a.onClick.connect!"onClickOpenShowcase"(this);
+        });
 
-        this ~= (){
-            auto sel = new Select!()("select_page");
-            _select = sel;
-            sel.showAllOptions = true;
-            sel.options ~= ["buttonActivity",     "button"];
-            sel.options ~= ["switchLinkActivity", "link"];
-            return sel;
-        }();
+        this ~= (new Select!()("select_page")).observe!((a){
+            _select = a;
+            a.options ~= ["buttonActivity",     "button"];
+            a.options ~= ["switchLinkActivity", "link"];
+        });
 
         this._pages["buttonActivity"] = [new ButtonPage()];
         this._pages["switchLinkActivity"] = [new SwitchLinkPage("A"), new SwitchLinkPage("B")];

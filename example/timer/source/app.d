@@ -9,6 +9,7 @@ import std.variant;
 
 import carbon.templates;
 import carbon.utils;
+import carbon.functional;
 
 import awebview.wrapper;
 
@@ -48,31 +49,17 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
     {
         super(id, ["dora_ogg": Variant(oggFileName)]);
 
-        this ~= {
-            auto txt_timer = new Paragraph!(["style": "font-size: 15em;"])("txt_timer");
-            _txt_timer = txt_timer;
-            return txt_timer;
-        }();
-        this ~= {
-            auto txt_secs = new InputText!()("txt_secs");
-            _txt_secs = txt_secs;
-            return txt_secs;
-        }();
-        this ~= {
-            auto btn_start = new InputButton!(["class" : "btn btn-lg btn-primary"])("btn_start");
-            btn_start.onClick.connect!"onTimerStart"(this);
-            return btn_start;
-        }();
-        this ~= {
-            auto btn_reset = new InputButton!(["class" : "btn btn-lg btn-warning"])("btn_reset");
-            btn_reset.onClick.connect!"onTimerReset"(this);
-            return btn_reset;
-        }();
-        this ~= {
-            auto radio_fb_btn = new GenericButton!(import(`radio_fb_btn.html`))("radio_fb_btn");
-            radio_fb_btn.onClick.connect!"onChangeDirection"(this);
-            return radio_fb_btn;
-        }();
+        this ~= (new Paragraph!(["style": "font-size: 15em;"])("txt_timer")).observe!((a){ _txt_timer = a; });
+        this ~= (new InputText!()("txt_secs")).observe!((a){ _txt_secs = a; });
+        this ~= (new InputButton!(["class" : "btn btn-lg btn-primary"])("btn_start")).observe!((a){
+            a.onClick.connect!"onTimerStart"(this);
+        });
+        this ~= (new InputButton!(["class" : "btn btn-lg btn-warning"])("btn_reset")).observe!((a){
+            a.onClick.connect!"onTimerReset"(this);
+        });
+        this ~= (new GenericButton!(import(`radio_fb_btn.html`))("radio_fb_btn")).observe!((a){
+            a.onClick.connect!"onChangeDirection"(this);
+        });
     }
 
 
