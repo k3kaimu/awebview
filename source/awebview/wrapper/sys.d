@@ -10,7 +10,6 @@ version(Windows)
 
     extern(Windows) nothrow export @nogc
     {
-        HWND GetActiveWindow();
         LONG SetWindowLongW(HWND,int,LONG);
         BOOL MoveWindow(
               HWND hWnd,      // ウィンドウのハンドル
@@ -53,25 +52,6 @@ version(Windows)
         tbl.HrInit();
         tbl.DeleteTab(hwnd);
     }
-}
-
-
-bool isActive(SDL_Window* sdlWindow)
-{
-    version(Windows)
-    {
-        SDL_SysWMinfo wmi;
-        SDL_VERSION(&(wmi.version_));
-
-        if(SDL_GetWindowWMInfo(sdlWindow, &wmi))
-            return GetActiveWindow() == wmi.info.win.window;
-        else
-            return false;
-    }
-    else
-        static assert(0, "'isActiveWindow' has not been implemented yet.");
-
-    assert(0);
 }
 
 
