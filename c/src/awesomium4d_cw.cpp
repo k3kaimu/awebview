@@ -1290,7 +1290,7 @@ void deleteDtor(WebKeyboardEvent * p)
     { new(p) WebKeyboardEvent(event); }
 
     WebKeyboardEvent * newCtor(NSEvent * event)
-    { new(p) WebKeyboardEvent(event); }
+    { return new WebKeyboardEvent(event); }
 
 #endif
 

@@ -1,9 +1,9 @@
 {
-	"name": "twiclient",
-	"description": "A minimal D application.",
-	"copyright": "Copyright © 2015, kazuki",
-	"authors": ["kazuki"],
-	"dependencies": {
+  "name": "twiclient",
+  "description": "A minimal D application.",
+  "copyright": "Copyright © 2015, kazuki",
+  "authors": ["kazuki"],
+  "dependencies": {
         "graphite": "~>1.4.3",
         "carbon": "~>1.3.0",
         "awebview": { "path": "../../" },

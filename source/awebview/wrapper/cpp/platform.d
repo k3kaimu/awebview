@@ -26,7 +26,8 @@ mixin template Awesomium()
         alias NativeWindow = core.sys.windows.windows.HWND;
     else version(OSX)
     {
-        struct NSView;
+        struct NSEvent{}
+        struct NSView{}
         alias NativeWindow = NSView*;
     }
     else

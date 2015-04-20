@@ -7,7 +7,11 @@ import std.path;
 import unzip_parallel;
 
 static immutable srcFileName = "awesomium4d_cw.cpp";
-static immutable objFileName = "awesomium4d_cw.obj";
+
+version(Win32)
+  static immutable objFileName = "awesomium4d_cw.obj";
+else
+  static immutable objFileName = "awesomium4d_cw.o";
 
 void buildAweWrapperCXX()
 {
@@ -21,7 +25,7 @@ void buildAweWrapperCXX()
   }
   else version(OSX)
   {
-    auto cxx = execute(["clang", "-c", "-fno-rtti", srcFileName]);
+    auto cxx = execute(["clang", "-c", "-fno-rtti", srcFileName, "-I."]);
   }
 
     writeln(cxx.output);

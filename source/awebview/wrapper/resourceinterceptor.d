@@ -214,7 +214,7 @@ struct ResourceRequest
             }
 
 
-            const(UploadElement) opIndex(size_t i) const nothrow
+            const(UploadElement) opIndex(uint i) const nothrow
             {
                 if(i < this.length)
                     return _parent.getUploadElement(_sIdx + i);
@@ -251,7 +251,7 @@ struct ResourceRequest
 
 
             @property
-            size_t length() const pure nothrow @safe @nogc
+            uint length() const pure nothrow @safe @nogc
             {
                 if(this.empty)
                     return 0;
@@ -266,7 +266,7 @@ struct ResourceRequest
             }
 
 
-            UploadElementsResult opSlice(size_t i, size_t j) const pure nothrow @safe
+            UploadElementsResult opSlice(uint i, uint j) const pure nothrow @safe
             {
                 if(i > j || j > this.length)
                     onRangeError();
@@ -282,8 +282,8 @@ struct ResourceRequest
 
           private:
             const(ResourceRequest) _parent;
-            size_t _sIdx;
-            size_t _bIdx;
+            uint _sIdx;
+            uint _bIdx;
         }
 
 
@@ -307,7 +307,7 @@ struct ResourceRequest
 
     void appendUploadBytes(in ubyte[] bytes) nothrow @nogc
     {
-        RReqMmb.AppendUploadBytes(_cppObj, cast(const(char)*)(bytes.ptr), bytes.length);
+        RReqMmb.AppendUploadBytes(_cppObj, cast(const(char)*)(bytes.ptr), cast(uint)bytes.length);
     }
 
 
@@ -337,7 +337,7 @@ struct ResourceResponse
     this(S)(const(ubyte)[] buffer, in S mimeType)
     {
         auto ws = WebStringCpp(mimeType);
-        this(Awesomium4D.ResourceResponseMember.Create(buffer.length, buffer.ptr, ws.cppObj));
+        this(Awesomium4D.ResourceResponseMember.Create(cast(uint)buffer.length, buffer.ptr, ws.cppObj));
     }
 
 

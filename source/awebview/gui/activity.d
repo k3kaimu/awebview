@@ -422,6 +422,13 @@ class Activity
 
 
     final
+    void removeChild(string id)
+    {
+        _children.remove(id);
+    }
+
+
+    final
     @property
     inout(Activity[string]) children() inout
     {
@@ -451,7 +458,7 @@ class Activity
 
 class SDLActivity : Activity
 {
-    this(string id, size_t width, size_t height, string title, WebSession session = null, uint sdlFlags = SDL_WINDOW_RESIZABLE)
+    this(string id, uint width, uint height, string title, WebSession session = null, uint sdlFlags = SDL_WINDOW_RESIZABLE)
     {
         import std.string : toStringz;
         import std.exception : enforce;
@@ -529,6 +536,26 @@ class SDLActivity : Activity
     {
         super.onUpdate();
         SDL_GL_SwapWindow(_sdlWind);
+    }
+
+
+    final
+    @property
+    bool hasKeyFocus()
+    {
+        return SDL_GetKeyboardFocus() == _sdlWind;
+    }
+
+
+    @property
+    bool isActive()
+    {
+        bool b = this.hasKeyFocus();
+        foreach(id, e; children)
+            if(auto sdlAct = cast(SDLActivity)e)
+                b = b || sdlAct.isActive();
+
+        return b;
     }
 
 
@@ -613,7 +640,7 @@ version(Windows)
 
 class SDLBorderlessActivity : SDLActivity
 {
-    this(string id, size_t width, size_t height, string title, WebSession session = null, uint orSDLFlags = SDL_WINDOW_RESIZABLE)
+    this(string id, uint width, uint height, string title, WebSession session = null, uint orSDLFlags = SDL_WINDOW_RESIZABLE)
     {
         uint flags = orSDLFlags | SDL_WINDOW_BORDERLESS;
         super(id, width, height, title, session, flags);
@@ -634,7 +661,7 @@ class SDLBorderlessActivity : SDLActivity
 
 
     override
-    void resize(size_t w, size_t h)
+    void resize(uint w, uint h)
     {
         SDL_SetWindowSize(this.sdlWindow, w, h);
         super.resize(w, h);
@@ -651,6 +678,9 @@ class SDLPopupActivity : SDLBorderlessActivity
         _session = session;
         _flags = orSDLFlags;
 
+        enforce(_popupActivities.length == idx);
+        _popupActivities ~= this;
+
       version(Windows)
       {
         /* see https://wiki.libsdl.org/SDL_SysWMinfo */
@@ -665,11 +695,12 @@ class SDLPopupActivity : SDLBorderlessActivity
 
     void popup(HTMLPage page, SDLActivity activity, int x, int y, uint w = 0, uint h = 0)
     {
+        activity.addChild(this);
         _parent = activity;
         SDL_SetWindowPosition(this.sdlWindow, x, y);
         this.attach();
-        this.load(page);
         SDL_RaiseWindow(this.sdlWindow);
+        this.load(page);
 
         _wfitting = w == 0;
         _hfitting = h == 0;
@@ -730,12 +761,13 @@ class SDLPopupActivity : SDLBorderlessActivity
 
     void popupChildAtAbs(HTMLPage page, uint x, uint y, uint w = 0, uint h = 0)
     {
-        if(_child is null){
-            _child = new SDLPopupActivity(_idx + 1, _session, _flags);
-            this.application.addActivity(_child);
+        auto child = childPopup();
+        if(child is null){
+            child = new SDLPopupActivity(_idx + 1, _session, _flags);
+            this.application.addActivity(child);
         }
 
-        _child.popup(page, this, x, y, w, h);
+        child.popup(page, this, x, y, w, h);
     }
 
 
@@ -751,6 +783,16 @@ class SDLPopupActivity : SDLBorderlessActivity
     }
 
 
+    @property
+    SDLPopupActivity childPopup()
+    {
+        if(_popupActivities.length > _idx+1)
+            return _popupActivities[_idx+1];
+        else
+            return null;
+    }
+
+
     override
     void onDetach()
     {
@@ -761,7 +803,11 @@ class SDLPopupActivity : SDLBorderlessActivity
         _wfitting = false;
         _hfitting = false;
         this.resize(0, 0);
-        _parent = null;
+
+        if(_parent){
+            _parent.removeChild(this.id);
+            _parent = null;
+        }
 
         super.onDetach();
     }
@@ -789,19 +835,9 @@ class SDLPopupActivity : SDLBorderlessActivity
             }
         }
 
-        if(_parent.isDetached || !this.hasFocus){
+        if(_parent.isDetached || !this.isActive){
             this.detach();
         }
-    }
-
-
-    @property
-    bool hasFocus()
-    {
-        if(_child)
-            return isActive(this.sdlWindow) || _child.hasFocus;
-        else
-            return isActive(this.sdlWindow);
     }
 
 
@@ -831,5 +867,6 @@ class SDLPopupActivity : SDLBorderlessActivity
     uint _w, _h;
 
     SDLActivity _parent;
-    SDLPopupActivity _child;
+
+    static SDLPopupActivity[] _popupActivities;
 }
