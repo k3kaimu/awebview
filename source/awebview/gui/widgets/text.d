@@ -20,7 +20,10 @@ interface ITextOutput
 }
 
 
-class GenericHTMLTextIO(string format, string property) : TemplateHTMLElement!(format), ITextInput, ITextOutput
+interface ITextIO : ITextInput, ITextOutput {}
+
+
+class GenericHTMLTextIO(string format, string property) : TemplateHTMLElement!(format), ITextIO
 {
     this(string id, Variant[string] exts = null) { super(id, false, exts); }
 

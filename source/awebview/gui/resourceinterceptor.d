@@ -42,6 +42,12 @@ class LocalResourceInterceptor : ResourceInterceptor
                     _app.runAtNextFrame((){ activity.reload(); });
                     return ResourceResponse(null);
                 }
+            }else if(spsp.length == 2 && spsp[0] == "HTMLElement"){ // HTMLElement-%[elem.id%].%[ext%]
+                //string mime = extToMIME.get(spsp[1].extension, "text/plain");
+                auto elem = _app.getActivity(spsp[1]).nowPage[spsp[1]];
+                char[] data = elem.html.dup;
+                string mime = elem.mime;
+                return ResourceResponse(cast(ubyte[])data, mime);
             }
         }
 
@@ -54,7 +60,6 @@ class LocalResourceInterceptor : ResourceInterceptor
     Application _app;
 }
 
-__EOF__
 
 /**
 http://webdesign.about.com/od/multimedia/a/mime-types-by-file-extension.htm

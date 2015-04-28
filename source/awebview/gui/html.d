@@ -130,6 +130,9 @@ abstract class HTMLPage
 
         _clientWidth = newW;
         _clientHeight = newH;
+
+        foreach(k, elem; elements.maybeModified)
+            elem.onUpdate();
     }
 
 
@@ -422,6 +425,7 @@ class HTMLElement
 
 
     @property string html() const { return ""; }
+    @property string mime() const { return "text/html"; }
 
 
     void onStart(HTMLPage page)
@@ -447,6 +451,9 @@ class HTMLElement
             _v = activity.createObject(_id);
         }
     }
+
+
+    void onUpdate() {}
 
 
     void onDetach() {}
@@ -911,14 +918,20 @@ if(is(Element : HTMLElement) && names.length >= 1)
     this(T...)(auto ref T args)
     {
         super(forward!args);
-        _doInit = true;
     }
 
 
     final
-    void doJSInitialize(bool b)
+    void doJSInitialize(bool b) @property
     {
         _doInit = b;
+    }
+
+
+    final
+    void stopPropergation(bool b) @property
+    {
+        _stopProp = b;
     }
 
 
@@ -938,13 +951,14 @@ if(is(Element : HTMLElement) && names.length >= 1)
         super.onLoad(init);
 
         if(_doInit){
-            this.activity.runJS(genSettingEventHandlers(this.id, this.domObject.jsExpr));
+            this.activity.runJS(genSettingEventHandlers(this.id, this.domObject.jsExpr, _stopProp));
         }
     }
 
 
   private:
     bool _doInit = true;
+    bool _stopProp = false;
 
     static
     {
@@ -952,22 +966,26 @@ if(is(Element : HTMLElement) && names.length >= 1)
         {
             auto app = appender!string();
 
-            foreach(s; names)
+            foreach(s; ns)
                 app.formattedWrite(`@JSMethodTag("%1$s"w) `"void %1$s(WeakRef!(const(JSArrayCpp)));\n", s);
 
             return app.data;
         }
 
 
-        string genSettingEventHandlers(string id, string domExpr)
+        string genSettingEventHandlers(string id, string domExpr, bool stopProp)
         {
             import std.string : toLower;
 
             auto app = appender!string();
             app.formattedWrite("var e = %s;", domExpr);
 
-            foreach(s; names)
-                app.formattedWrite(q{e.%3$s = function() { %1$s.%2$s(); };}, id, s, toLower(s));
+            foreach(s; ns){
+                if(!stopProp)
+                    app.formattedWrite(q{e.%3$s = function() { %1$s.%2$s(); };}, id, s, toLower(s));
+                else
+                    app.formattedWrite(q{e.%3$s = function(ev) { ev.stopPropergation(); %1$s.%2$s(); };}, id, s, toLower(s));
+            }
 
             return app.data;
         }
@@ -981,7 +999,7 @@ alias DeclDefSignals(Element, names...) = DefineSignals!(DeclareSignals!(Element
 /**
 Open context menu when user click right button.
 */
-abstract class DeclareContextMenu(Element) : DeclareSignals!(Element, "onContextMenu")
+abstract class DeclareContextMenu(Element, setting...) : DeclareSignals!(Element, "onContextMenu", setting)
 {
     HTMLPage menuPage() @property;
 
