@@ -17,6 +17,8 @@ import std.array : appender;
 import std.format : formattedWrite;
 import std.functional : forward;
 import std.conv : to;
+import std.datetime;
+public import core.time : Duration;
 
 public import carbon.event : FiredContext;
 import carbon.templates : Lstr;
@@ -966,7 +968,7 @@ if(is(Element : HTMLElement) && names.length >= 1)
         {
             auto app = appender!string();
 
-            foreach(s; ns)
+            foreach(s; names)
                 app.formattedWrite(`@JSMethodTag("%1$s"w) `"void %1$s(WeakRef!(const(JSArrayCpp)));\n", s);
 
             return app.data;
@@ -980,7 +982,7 @@ if(is(Element : HTMLElement) && names.length >= 1)
             auto app = appender!string();
             app.formattedWrite("var e = %s;", domExpr);
 
-            foreach(s; ns){
+            foreach(s; names){
                 if(!stopProp)
                     app.formattedWrite(q{e.%3$s = function() { %1$s.%2$s(); };}, id, s, toLower(s));
                 else
@@ -1001,6 +1003,12 @@ Open context menu when user click right button.
 */
 abstract class DeclareContextMenu(Element, setting...) : DeclareSignals!(Element, "onContextMenu", setting)
 {
+    this(T...)(auto ref T args)
+    {
+        super(forward!args);
+    }
+
+
     HTMLPage menuPage() @property;
 
 
@@ -1009,6 +1017,71 @@ abstract class DeclareContextMenu(Element, setting...) : DeclareSignals!(Element
     {
         this.activity.popup(this.menuPage);
     }
+}
+
+
+/**
+Mouse hover event
+*/
+abstract class DeclareHoverSignal(Element) : DeclareSignals!(Element, "onMouseOver", "onMouseOut")
+{
+    this(T...)(auto ref T args)
+    {
+        super(forward!args);
+    }
+
+
+    /**
+    */
+    final
+    bool hover() @property { return _hovered; }
+
+
+    final
+    void onHoverImpl()
+    {
+        if(_isStarted)
+            onHover(_hovered, Clock.currTime - _startTime);
+    }
+
+
+    /**
+    */
+    void onHover(bool bOver, Duration dur);
+
+
+    override
+    void onUpdate()
+    {
+        super.onUpdate();
+
+        onHoverImpl();
+    }
+
+
+    override
+    void onMouseOver(WeakRef!(const(JSArrayCpp)))
+    {
+        _isStarted = true;
+        _hovered = true;
+        _startTime = Clock.currTime;
+        onHoverImpl();
+    }
+
+
+    override
+    void onMouseOut(WeakRef!(const(JSArrayCpp)))
+    {
+        _hovered = false;
+        _startTime = Clock.currTime;
+        onHoverImpl();
+    }
+
+
+  private:
+    bool _isStarted;
+    bool _hovered;
+    SysTime _startTime;
 }
 
 
