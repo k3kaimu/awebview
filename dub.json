@@ -17,8 +17,8 @@
         "name": "library",
 
         "_sourceFiles-windows-x86": ["awesomium4d_cw.obj"],
-        "sourceFiles-linux-x86": ["bin/linux32/awesomium4d_cw.o"],
-        "sourceFiles-posix-x86_64": ["bin/linux64/awesomium4d_cw.o"],
+        "_sourceFiles-linux-x86": ["bin/linux32/awesomium4d_cw.o"],
+        "_sourceFiles-posix-x86_64": ["bin/linux64/awesomium4d_cw.o"],
         "copyFiles-windows-x86": ["bin/win32/awesomium_process.exe",
                                   "bin/win32/avcodec-53.dll",
                                   "bin/win32/avformat-53.dll",
@@ -46,6 +46,12 @@
                                   "c/src/unzip_parallel.d",
                                   "c/src/awesomium4d_cw.cpp",
                                   "c/Awesomium.zip"],
+        "copyFiles-osx": ["c/src/build_awewrapper.d",
+                          "c/src/unzip_parallel.d",
+                          "c/src/awesomium4d_cw.cpp",
+                          "c/Awesomium.zip",
+                          "c/src/osx_wrapper.mm"
+                          ],
       },
 
       {

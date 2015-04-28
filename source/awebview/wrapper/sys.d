@@ -65,6 +65,6 @@ void deleteFromTaskbar(SDL_Window* sdlWindow)
         if(SDL_GetWindowWMInfo(sdlWindow, &wmi))
             deleteFromTaskbar(wmi.info.win.window);
     }
-    else
-        static assert(0, "'deleteFromTaskbar' has not been implemented yet.");
+    //else
+    //    static assert(0, "'deleteFromTaskbar' has not been implemented yet.");
 }
