@@ -7,6 +7,7 @@ import awebview.gui.activity;
 import awebview.gui.application;
 import awebview.gui.contextmenu;
 import std.conv;
+import core.time;
 
 import carbon.utils;
 import carbon.nonametype;
@@ -40,13 +41,29 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
 
     void onClickDiv(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
+        class Menu : DeclareHoverSignal!(TemplateHTMLElement!(`<div id="%[id%]">Click me!</div>`))
+        {
+            this(string id) { super(id, true); }
+
+            override
+            void onHover(bool bOver, Duration d)
+            {
+                auto thisAct = this.activity.to!SDLPopupActivity;
+                if(bOver){
+                    if(d > 300.msecs && (thisAct.childPopup is null || thisAct.childPopup.isDetached)){
+                        auto innerH = thisAct.nowPage.to!ContextMenuListPage.offsetTop(2);
+                        thisAct.popupChildRight(_menu, innerH);
+                    }
+                }
+            }
+        }
+
         auto popup = application.to!SDLApplication.popupActivity;
         auto page = new ContextMenuListPage(
                 "fooo",
                 "foooo000",
             '-',
-                (new AssumeImplemented!(DeclDefSignals!(TemplateHTMLElement!(`<div id="%[id%]">Click me!</div>`), "onMouseOver"))("div_button2", true))
-                .observe!((a){ a.onMouseOver.connect!"onMouseOverMenuItemDiv"(this); })
+                new Menu("div_button2")
             );
         popup.popup(page, this.activity.to!SDLActivity);
     }

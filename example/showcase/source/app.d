@@ -7,6 +7,7 @@ import awebview.wrapper;
 
 import button_page;
 import switchlink;
+import radio_page;
 
 import std.conv;
 import carbon.functional;
@@ -46,10 +47,12 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
             _select = a;
             a.options ~= ["buttonActivity",     "button"];
             a.options ~= ["switchLinkActivity", "link"];
+            a.options ~= ["radioActivity", "radio"];
         });
 
         this._pages["buttonActivity"] = [new ButtonPage()];
         this._pages["switchLinkActivity"] = [new SwitchLinkPage("A"), new SwitchLinkPage("B")];
+        this._pages["radioActivity"] = [new RadioPage()];
     }
 
 

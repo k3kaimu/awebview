@@ -10,7 +10,10 @@
     "libs-windows-x86-dmd": ["awesomium_omf", "stlp45dm_static", "ole32"],
 
     "libs-linux": ["awesomium-1-7", "stdc++"],
-    "copyFiles-posix-x86_64": ["bin/linux64/awesomium_process"],
+    "copyFiles-posix-x86_64":
+      ["bin/linux64/awesomium_process",
+       "bin/linux64/libawesomium-1-7.so.5.0",
+       "bin/linux64/libffmpegsumo.so"],
 
     "configurations": [
       {
@@ -52,6 +55,10 @@
                           "c/Awesomium.zip",
                           "c/src/osx_wrapper.mm"
                           ],
+        "copyFiles-linux": ["c/src/build_awewrapper.d",
+                          "c/src/unzip_parallel.d",
+                          "c/src/awesomium4d_cw.cpp",
+                          "c/Awesomium.zip"],
       },
 
       {
