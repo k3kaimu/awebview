@@ -22,7 +22,8 @@ void main()
       activity.load("hello");
       return activity;
     });
-    
+
+
     // アプリケーションを走らせる
     app.run();
 }

@@ -59,7 +59,7 @@ class ContextMenuListPage : HTMLPage
 
     override
     @property
-    string html() const
+    string html()
     {
         bool bBorderedTop;
         auto app = appender!string();

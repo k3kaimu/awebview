@@ -79,7 +79,7 @@ abstract class HTMLPage
     string id() const pure nothrow @safe @nogc @property { return _id; }
 
 
-    string html() const @property;
+    string html() @property;
 
 
     inout(HTMLElement[string]) elements() inout @property;
@@ -222,7 +222,7 @@ class WebPage : HTMLPage
 
 
     override
-    string html() const
+    string html() @property
     {
         return `<html><head><title>Jump</title></head><body>Now loading...</body></html>`;
     }
@@ -314,7 +314,7 @@ class TemplateHTMLPage(string form) : HTMLPage
 
     override
     @property
-    string html() const
+    string html()
     {
         return mixin(Lstr!(form));
     }
@@ -426,8 +426,8 @@ class HTMLElement
     final @property string id() const pure nothrow @safe @nogc { return _id; }
 
 
-    @property string html() const { return ""; }
-    @property string mime() const { return "text/html"; }
+    @property string html() { return ""; }
+    @property string mime() { return "text/html"; }
 
 
     void onStart(HTMLPage page)
@@ -814,7 +814,7 @@ if(is(Element : HTMLElement))
 
     override
     @property
-    string html() const
+    string html()
     {
         import carbon.templates : Lstr;
         return mixin(Lstr!(form));

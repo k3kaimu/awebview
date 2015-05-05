@@ -242,9 +242,9 @@ class Select(alias attrs = null)
 
     override
     @property
-    string html() const
+    string html()
     {
-        auto str = super.html();
+        auto str = super.html;
 
         auto app = appender!string();
         foreach(i, e; _opts)
