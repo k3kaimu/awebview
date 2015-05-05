@@ -20,7 +20,14 @@ interface ITextOutput
 }
 
 
-interface ITextIO : ITextInput, ITextOutput {}
+interface ITextIO : ITextInput, ITextOutput
+{
+    @property
+    string text();
+
+    @property
+    void text(string);
+}
 
 
 class GenericHTMLTextIO(string format, string property) : TemplateHTMLElement!(format), ITextIO
