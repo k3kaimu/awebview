@@ -155,6 +155,9 @@ abstract class HTMLPage
     void onResize(size_t w, size_t h)
     {
         this.activity.runJS(_resizeStatements);
+
+        foreach(k, elem; elements.maybeModified)
+            elem.onResize(w, h);
     }
 
 
@@ -478,6 +481,9 @@ class HTMLElement
                 this.opIndexAssign(v, key);
         }
     }
+
+
+    void onResize(size_t w, size_t h) {}
 
 
     final
@@ -1085,6 +1091,93 @@ abstract class DeclareHoverSignal(Element) : DeclareSignals!(Element, "onMouseOv
     bool _isStarted;
     bool _hovered;
     SysTime _startTime;
+}
+
+
+/**
+EventPipe
+*/
+final class PageSignalHandler : HTMLElement
+{
+    import carbon.event;
+
+    this(string id = "_event_signal_pipe") { super(id, false); }
+
+  @property
+  {
+    ref RestrictedSignal!(FiredContext, Activity)       onStartHandler  () { return _onStartEvent; }
+    ref RestrictedSignal!(FiredContext, bool)           onAttachHandler () { return _onAttachEvent; }
+    ref RestrictedSignal!(FiredContext, bool)           onLoadHandler   () { return _onLoadEvent; }
+    ref RestrictedSignal!(FiredContext)                 onUpdateHandler () { return _onUpdateEvent; }
+    ref RestrictedSignal!(FiredContext)                 onDetachHandler () { return _onDetachEvent; }
+    ref RestrictedSignal!(FiredContext)                 onDestroyHandler() { return _onDestroyEvent; }
+    ref RestrictedSignal!(FiredContext, size_t, size_t) onResizeHandler () { return _onResizeEvent; }
+  }
+
+    override
+    void onStart(HTMLPage page)
+    {
+        super.onStart(page);
+        _onStartEvent.emit(this, page.activity);
+    }
+
+
+    override
+    void onAttach(bool bInit)
+    {
+        super.onAttach(bInit);
+        _onAttachEvent.emit(this, bInit);
+    }
+
+
+    override
+    void onLoad(bool bInit)
+    {
+        super.onLoad(bInit);
+        _onLoadEvent.emit(this, bInit);
+    }
+
+
+    override
+    void onUpdate()
+    {
+        super.onUpdate();
+        _onUpdateEvent.emit(this, );
+    }
+
+
+    override
+    void onDetach()
+    {
+        super.onDetach();
+        _onDetachEvent.emit(this, );
+    }
+
+
+    override
+    void onDestroy()
+    {
+        super.onDestroy();
+        _onDestroyEvent.emit(this, );
+    }
+
+
+    override
+    void onResize(size_t w, size_t h)
+    {
+        super.onResize(w, h);
+        _onResizeEvent.emit(this, w, h);
+    }
+
+
+  private:
+    EventManager!(Activity) _onStartEvent;
+    EventManager!(bool) _onAttachEvent;
+    EventManager!(bool) _onLoadEvent;
+    EventManager!() _onUpdateEvent;
+    EventManager!() _onDetachEvent;
+    EventManager!() _onDestroyEvent;
+    EventManager!(size_t, size_t) _onResizeEvent;
 }
 
 
