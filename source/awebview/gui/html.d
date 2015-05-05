@@ -340,6 +340,9 @@ class TemplateHTMLPage(string form) : HTMLPage
     @property
     inout(Variant[string]) exts() inout { return _exts; }
 
+    @property
+    inout(T) exts(T)(string str) inout { return *_exts[str].peek!T; }
+
 
   private:
     HTMLElement[string] _elems;
