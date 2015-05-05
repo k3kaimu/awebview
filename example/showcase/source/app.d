@@ -8,6 +8,7 @@ import awebview.wrapper;
 import button_page;
 import switchlink;
 import radio_page;
+import progress_page;
 
 import std.conv;
 import carbon.functional;
@@ -45,14 +46,16 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
 
         this ~= (new Select!()("select_page")).observe!((a){
             _select = a;
-            a.options ~= ["buttonActivity",     "button"];
-            a.options ~= ["switchLinkActivity", "link"];
-            a.options ~= ["radioActivity", "radio"];
+            a.options ~= ["buttonActivity",     "Button"];
+            a.options ~= ["switchLinkActivity", "Link"];
+            a.options ~= ["radioActivity", "Radio Button"];
+            a.options ~= ["progressActivity", "Progress Bar"];
         });
 
         this._pages["buttonActivity"] = [new ButtonPage()];
         this._pages["switchLinkActivity"] = [new SwitchLinkPage("A"), new SwitchLinkPage("B")];
         this._pages["radioActivity"] = [new RadioPage()];
+        this._pages["progressActivity"] = [new ProgressPage()];
     }
 
 
