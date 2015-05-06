@@ -47,7 +47,7 @@ class MainPage :  TemplateHTMLPage!(import(`main_page.html`))
 
         this ~= new TweetTextArea(`iptTweetText`);
 
-        this ~= (new NormalButton(`btnTweet`)).observe!((a){
+        this ~= new NormalButton(`btnTweet`).digress!((a){
             a.onClick.connect!"onClickTweet"(this);
             a.staticProps["value"] = "ツイート";
         });

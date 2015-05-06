@@ -27,12 +27,12 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         this ~= new InputText!()("iptCnsKey");
         this ~= new InputText!()("iptCnsSct");
 
-        this ~= (new NormalButton("btnOpenBrowser")).observe!((a){
+        this ~= new NormalButton("btnOpenBrowser").digress!((a){
             a.onClick.connect!"onClickOpenBrowser"(this);
             a.staticProps["value"] = "ブラウザで開く";
         });
 
-        this ~= (new NormalButton("btnDoOAuth")).observe!((a){
+        this ~= new NormalButton("btnDoOAuth").digress!((a){
             a.onClick.connect!"onClickDoOAuth"(this);
             a.staticProps["value"] = "認証";
         });

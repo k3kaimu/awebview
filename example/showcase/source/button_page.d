@@ -19,12 +19,12 @@ class ButtonPage : TemplateHTMLPage!(import(`button_page.html`))
     {
         super("buttonPage", null);
 
-        this ~= (new InputButton!()("input_button")).observe!((a){
+        this ~= new InputButton!()("input_button").digress!((a){
             a.staticProps["value"] = "Click me!";
             a.onClick.connect!"onClickInputButton"(this);
         });
 
-        this ~= (new GenericButton!(`<div id="%[id%]">Click me!</div>`)("div_button")).observe!((a){
+        this ~= new GenericButton!(`<div id="%[id%]">Click me!</div>`)("div_button").digress!((a){
             a.onClick.connect!"onClickDiv"(this);
         });
 

@@ -39,12 +39,12 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
     {
         super("mainPage", null);
 
-        this ~= (new InputButton!()("open_showcase_button")).observe!((a){
+        this ~= new InputButton!()("open_showcase_button").digress!((a){
             a.staticProps["value"] = "Open showcase";
             a.onClick.connect!"onClickOpenShowcase"(this);
         });
 
-        this ~= (new Select!()("select_page")).observe!((a){
+        this ~= new Select!()("select_page").digress!((a){
             _select = a;
             a.options ~= ["buttonActivity",     "Button"];
             a.options ~= ["switchLinkActivity", "Link"];

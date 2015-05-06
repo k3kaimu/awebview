@@ -49,15 +49,15 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
     {
         super(id, ["dora_ogg": Variant(oggFileName)]);
 
-        this ~= (new Paragraph!(["style": "font-size: 15em;"])("txt_timer")).observe!((a){ _txt_timer = a; });
-        this ~= (new InputText!()("txt_secs")).observe!((a){ _txt_secs = a; });
-        this ~= (new InputButton!(["class" : "btn btn-lg btn-primary"])("btn_start")).observe!((a){
+        this ~= new Paragraph!(["style": "font-size: 15em;"])("txt_timer").digress!((a){ _txt_timer = a; });
+        this ~= new InputText!()("txt_secs").digress!((a){ _txt_secs = a; });
+        this ~= new InputButton!(["class" : "btn btn-lg btn-primary"])("btn_start").digress!((a){
             a.onClick.connect!"onTimerStart"(this);
         });
-        this ~= (new InputButton!(["class" : "btn btn-lg btn-warning"])("btn_reset")).observe!((a){
+        this ~= new InputButton!(["class" : "btn btn-lg btn-warning"])("btn_reset").digress!((a){
             a.onClick.connect!"onTimerReset"(this);
         });
-        this ~= (new GenericButton!(import(`radio_fb_btn.html`))("radio_fb_btn")).observe!((a){
+        this ~= new GenericButton!(import(`radio_fb_btn.html`))("radio_fb_btn").digress!((a){
             a.onClick.connect!"onChangeDirection"(this);
         });
     }
