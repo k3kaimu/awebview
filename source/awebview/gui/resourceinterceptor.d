@@ -33,7 +33,7 @@ class LocalResourceInterceptor : ResourceInterceptor
             if(spsp.length == 4 && spsp[0] == "Activity" && spsp[2] == "HTMLPage"){
                 auto activity = _app.getActivity(spsp[1]);
                 if(spsp[3].extension == ".html"){                   // Activity-%[act.id%]-HTMLPage-%[page.id%].html
-                    char[] html = activity[spsp[3].baseName(".html")].html.dup;
+                    auto html = activity[spsp[3].baseName(".html")].html;
                     return ResourceResponse(cast(ubyte[])html, "text/html");
                 }else if(activity.nowPage != activity[spsp[3]]){    // Activity-%[act.id%]-HTMLPage-%[other page.id%]
                     _app.runAtNextFrame((){ activity.load(spsp[3]); });
@@ -45,7 +45,7 @@ class LocalResourceInterceptor : ResourceInterceptor
             }else if(spsp.length == 2 && spsp[0] == "HTMLElement"){ // HTMLElement-%[elem.id%].%[ext%]
                 //string mime = extToMIME.get(spsp[1].extension, "text/plain");
                 auto elem = _app.getActivity(spsp[1]).nowPage[spsp[1]];
-                char[] data = elem.html.dup;
+                auto data = elem.rawResource;
                 string mime = elem.mime;
                 return ResourceResponse(cast(ubyte[])data, mime);
             }

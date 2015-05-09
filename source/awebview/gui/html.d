@@ -434,6 +434,7 @@ class HTMLElement
 
     @property string html() { return ""; }
     @property string mime() { return "text/html"; }
+    @property const(void)[] rawResource() { return this.html; }
 
 
     void onStart(HTMLPage page)
