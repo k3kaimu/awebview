@@ -30,14 +30,16 @@ shared immutable effectMusicFile = "foo.ogg";
 void main()
 {
     auto app = SDLApplication.instance;
-    app.createActivity(WebPreferences.recommended,
-    delegate(WebSession session){
-        auto activity = new SDLActivity("MainActivity", 1200, 600, "Timer by D(awebview HTML)", session);
-        auto page = new TimerPage("timer_page", effectMusicFile);
+    with(app.newFactoryOf!SDLActivity(WebPreferences.recommended)){
+        id = "MainActivity";
+        width = 1200;
+        height = 600;
+        title = "Timer by D(awebview HTML)";
 
-        activity.load(page);
-        return activity;
-    });
+        app.addActivity(newInstance.digress!((a){
+            a.load(new TimerPage("timer_page", effectMusicFile));
+        }));
+    }
 
     app.run();
 }

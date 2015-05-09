@@ -17,14 +17,17 @@ void main()
 {
     auto app = SDLApplication.instance;
     auto pref = WebPreferences.recommended;
-    app.createActivity(pref, delegate(WebSession session){
-      auto activity = new SDLActivity("MainActivity", 600, 400, "Showcase", session);
-      auto mainPage = new MainPage();
 
-      activity ~= mainPage;
-      activity.load(mainPage);
-      return activity;
-    });
+    with(app.newFactoryOf!SDLActivity(pref)){
+        id = "MainActivity";
+        width = 600;
+        height = 400;
+        title = "Showcase";
+
+        app.addActivity(newInstance.digress!((a){
+            a.load(new MainPage());
+        }));
+    }
 
     app.initPopup(pref);
 
@@ -64,12 +67,20 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
         string str = _select.selected;
         auto app = cast(SDLApplication)application;
         if(str in _pages && str !in app.activities){
-            auto act = app.createActivity(WebPreferences.recommended, _pages[str][0], str, 600, 400, "Showcase");
+            with(app.newFactoryOf!SDLActivity(WebPreferences.recommended)){
+                id = str;
+                width = 600;
+                height = 400;
+                title = "Showcase";
 
-            foreach(e; _pages[str][1 .. $])
-                act ~= e;
+                app.addActivity(newInstance.digress!((a){
+                    a.load(_pages[str][0]);
+                    foreach(e; _pages[str][1 .. $])
+                        a ~= e;
 
-            activity.addChild(act);
+                    activity.addChild(a);
+                }));
+            }
         }
     }
 

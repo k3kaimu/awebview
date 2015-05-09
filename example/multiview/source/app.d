@@ -13,15 +13,16 @@ void main()
     auto app = SDLApplication.instance;
     auto pref = WebPreferences.recommended;
 
-    app.createActivity(pref, delegate(WebSession session){
-      auto activity = new SDLActivity("MainActivity", 600, 400, "Hello!", session);
-      auto topPage = new TopPage();
+    with(app.newFactoryOf!SDLActivity(pref)){
+        id = "MainActivity";
+        width = 600;
+        height = 400;
+        title ="Hello!";
 
-      activity ~= topPage;
-      activity.load("topPage");
-
-      return activity;
-    });
+        app.addActivity(newInstance.digress!((a){
+            a.load(new TopPage);
+        }));
+    }
 
     app.run();
 }
@@ -61,11 +62,19 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
 
         ++_n;
         immutable actId = format("MainActivity%s", _n),
-                  title = format("%s!", _n);
+                  newTitle = format("%s!", _n);
 
-        activity.addChild(application.to!SDLApplication.createActivity(
-                            WebPreferences.recommended,
-                            new ChildPage(), actId, 600, 400, title));
+        with(application.to!SDLApplication.newFactoryOf!SDLActivity(WebPreferences.recommended)){
+            id = actId;
+            width = 600;
+            height = 400;
+            title = newTitle;
+
+            activity.addChild(newInstance.digress!((a){
+                a.load(new ChildPage());
+                application.addActivity(a);
+            }));
+        }
     }
 
 

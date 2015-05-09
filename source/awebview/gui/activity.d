@@ -27,7 +27,20 @@ import awebview.cssgrammar;
 import std.exception,
        std.string;
 
+
 //version = AwebviewSaveHTML;
+
+interface ActivityFactory(A : Activity)
+{
+    Activity newInstance() @property;
+}
+
+interface ActivityFactory(A) : ActivityFactory!Activity
+if(is(A : Activity))
+{
+    A newInstance() @property;
+}
+
 
 class Activity
 {
@@ -482,6 +495,31 @@ class SDLActivity : Activity
     }
 
 
+    static
+    auto factory() @property
+    {
+        static final class Factory : ActivityFactory!SDLActivity
+        {
+            string id = null;
+            uint width = 640;
+            uint height = 480;
+            string title = "";
+            WebSession webSession = null;
+            uint sdlFlag = SDL_WINDOW_RESIZABLE;
+
+            SDLActivity newInstance() @property
+            {
+                enforce(id !is null, "id is null");
+
+                return new SDLActivity(id, width, height, title, webSession, sdlFlag);
+            }
+        }
+
+
+        return new Factory();
+    }
+
+
     override
     void onAttach()
     {
@@ -660,6 +698,31 @@ class SDLBorderlessActivity : SDLActivity
     }
 
 
+    static
+    auto factory() @property
+    {
+        static final class Factory : ActivityFactory!SDLBorderlessActivity
+        {
+            string id = null;
+            uint width = 640;
+            uint height = 480;
+            string title = "";
+            WebSession webSession = null;
+            uint sdlFlag = SDL_WINDOW_RESIZABLE;
+
+            SDLBorderlessActivity newInstance() @property
+            {
+                enforce(id !is null, "id is null");
+
+                return new SDLBorderlessActivity(id, width, height, title, webSession, sdlFlag);
+            }
+        }
+
+
+        return new Factory();
+    }
+
+
     override
     void resize(uint w, uint h)
     {
@@ -690,6 +753,26 @@ class SDLPopupActivity : SDLBorderlessActivity
         if(SDL_GetWindowWMInfo(_sdlWind, &wmi))
             deleteFromTaskbar(wmi.info.win.window);
       }
+    }
+
+
+    static
+    auto factory() @property
+    {
+        static final class Factory : ActivityFactory!SDLPopupActivity
+        {
+            size_t index;
+            WebSession webSession = null;
+            uint sdlFlag = SDL_WINDOW_RESIZABLE;
+
+            SDLPopupActivity newInstance() @property
+            {
+                return new SDLPopupActivity(index, webSession, sdlFlag);
+            }
+        }
+
+
+        return new Factory();
     }
 
 

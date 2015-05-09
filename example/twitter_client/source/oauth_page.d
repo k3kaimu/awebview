@@ -8,6 +8,7 @@ import awebview.gui.html;
 import awebview.gui.widgets.button;
 import awebview.gui.widgets.text;
 import awebview.gui.application;
+import awebview.gui.activity;
 
 import graphite.twitter;
 
@@ -49,9 +50,18 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         if(_twTkn.isNull && cnsKey.length && cnsSct.length){
             auto cnsTkn = ConsumerToken(cnsKey, cnsSct);
             _twTkn = Twitter(Twitter.oauth.requestToken(cnsTkn, null));
-            //browse(_twTkn.callAPI!"oauth.authorizeURL"());
-            activity.addChild(application.to!SDLApplication.createActivity(WebPreferences.recommended,
-            new WebPage("oauthWebPage", _twTkn.callAPI!"oauth.authorizeURL"()), "oauthWebPageActivity", 600, 400, "Twitter OAuth"));
+
+            auto app = application.to!SDLApplication;
+            with(app.newFactoryOf!SDLActivity(WebPreferences.recommended)){
+                id = "oauthWebPageActivity";
+                width = 600;
+                height = 400;
+                title = "Twitter OAuth";
+
+                app.addActivity(newInstance.digress!((a){
+                    a.load(new WebPage("oauthWebPage", _twTkn.callAPI!"oauth.authorizeURL"()));
+                }));
+            }
         }
     }
 

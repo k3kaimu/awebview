@@ -5,19 +5,24 @@ import awebview.gui.widgets.text;
 import awebview.wrapper;
 
 import std.datetime;
+import carbon.functional;
 
 void main()
 {
     auto app = SDLApplication.instance;
     auto pref = WebPreferences.recommended;
-    app.createActivity(pref, delegate(WebSession session){
-      auto activity = new SDLActivity("MainActivity", 600, 400, "Hello!", session);
-      activity ~= new ClockPage("clockPage");
-      
-      activity.load("clockPage");
-      return activity;
-    });
-    
+
+    with(app.newFactoryOf!SDLActivity(pref)){
+        id = "MainActivity";
+        width = 600;
+        height = 400;
+        title = "Hello!";
+
+        app.addActivity(newInstance.digress!((a){
+            a.load(new ClockPage("clockPage"));
+        }));
+    }
+
     app.run();
 }
 

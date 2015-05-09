@@ -1232,7 +1232,11 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
         */
         void innerHTML(string html)
         {
-            (_expr["innerHTML"] = html).run();
+            auto carrier = _expr.activity.carrierObject;
+            carrier.setProperty("value", JSValue(html));
+            _expr.activity.runJS(mixin(Lstr!q{
+                %[_expr.jsExpr%].innerHTML = _carrierObject_.value;
+            }));
         }
 
 
@@ -1241,7 +1245,12 @@ auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
         */
         void insertAdjacentHTML(string pos, string html)
         {
-            _expr.invoke!"insertAdjacentHTML"(pos, html).run();
+            auto carrier = _expr.activity.carrierObject;
+            carrier.setProperty("value", JSValue(html));
+            carrier.setProperty("pos", JSValue(pos));
+            _expr.activity.runJS(mixin(Lstr!q{
+                %[_expr.jsExpr%].insertAdjacentHTML(_carrierObject_.pos, _carrierObject_.value);
+            }));
         }
 
 

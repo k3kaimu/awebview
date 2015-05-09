@@ -8,7 +8,7 @@ import std.exception;
 import std.variant;
 
 import carbon.templates;
-import carbon.utils;
+import carbon.functional;
 
 import awebview.wrapper;
 
@@ -26,22 +26,19 @@ import std.file : exists;
 void main()
 {
     auto app = SDLApplication.instance;
-
     auto pref = WebPreferences.recommended;
 
-    app.createActivity(pref, delegate(WebSession session){
-        // create window-view
-        auto activity = new SDLActivity("MainActivity", 600, 600, "Twitter Client by D(awebview HTML GUI)", session);
+    with(app.newFactoryOf!SDLActivity(pref)){
+        id = "MainActivity";
+        width = 600;
+        height = 600;
+        title = "Twitter Client by D(awebview HTML GUI)";
 
-        // add pages to activity
-        activity ~= new OAuthPage();  // .id == "oauthPage"
-        activity ~= new MainPage();   // .id == "mainPage"
+        app.addActivity(newInstance.digress!((a){
+            a ~= new OAuthPage();
+            a.load(new MainPage());
+        }));
+    }
 
-        // load MainPage as initial page()
-        activity.load("mainPage");
-        return activity;
-    });
-
-    // run main loop
     app.run();
 }

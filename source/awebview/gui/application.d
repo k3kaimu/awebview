@@ -137,25 +137,13 @@ class SDLApplication : Application
     }
 
 
-    A createActivity(A : SDLActivity)(WebPreferences pref, A delegate(WebSession) dg)
+    auto newFactoryOf(A)(WebPreferences pref)
+    if(is(A : Activity))
     {
         auto session = WebCore.instance.createWebSession(WebString(""), pref);
-
-        auto act = dg(session);
-        addActivity(act);
-
-        return act;
-    }
-
-
-    SDLActivity createActivity(WebPreferences pref, HTMLPage page, string actID, uint width, uint height, string title)
-    {
-        return this.createActivity(pref, delegate(WebSession session){
-            auto act = new SDLActivity(actID, width, height, title, session);
-            act ~= page;
-            act.load(page);
-            return act;
-        });
+        auto factory = A.factory();
+        factory.webSession = session;
+        return factory;
     }
 
 
@@ -185,9 +173,14 @@ class SDLApplication : Application
 
     SDLPopupActivity initPopup(WebPreferences pref)
     {
-        auto act = this.createActivity(pref, delegate(WebSession session){
-            return new SDLPopupActivity(0, session);
-        });
+        alias A = typeof(return);
+
+        A act;
+        with(this.newFactoryOf!A(pref)){
+            index = 0;
+            act = newInstance;
+            this.addActivity(act);
+        }
         this.detachActivity(act.id);
         _popupRoot = act;
         return act;
