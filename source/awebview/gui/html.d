@@ -6,8 +6,6 @@ import awebview.gui.methodhandler;
 import awebview.gui.application;
 
 import awebview.wrapper;
-
-import awebview.jsbuilder;
 import awebview.cssgrammar;
 
 import std.variant;
@@ -357,6 +355,9 @@ class TemplateHTMLPage(string form) : HTMLPage
 
 class HTMLElement
 {
+    import awebview.jsvariable;
+
+
     this(string id, bool doCreateObject)
     in{
         if(id is null)
@@ -414,15 +415,23 @@ class HTMLElement
 
 
     @property
-    JSExpression domObject()
+    string jsExpr()
     in {
         assert(hasObject || hasId);
     }
     body {
         if(this.hasObject)
-            return JSExpression(mixin(Lstr!q{_tmp_%[_id%].domObject}), activity);
+            return mixin(Lstr!q{_tmp_%[_id%].domObject});
         else
-            return JSExpression(`document.getElementById("` ~ id ~ `")`, activity);
+            return `document.getElementById("` ~ id ~ `")`;
+    }
+
+
+    final
+    @property
+    auto domObject()
+    {
+        return jsExpression(this.activity, this.jsExpr);
     }
 
 
@@ -547,53 +556,9 @@ class HTMLElement
     }
 
 
-    void opIndexAssign(T)(T value, string name)
-    if(is(typeof(JSValue(value)) : JSValue))
-    in{
-        assert(this.hasId);
-    }
-    body{
-        this.opIndexAssign(JSValue(value), name);
-    }
-
-
     final
-    void opIndexAssign(JSValue value, string name)
-    in{
-        assert(this.hasId);
-    }
-    body{
-        if(value.isBoolean){
-            if(value.get!bool)
-                activity.runJS(mixin(Lstr!
-                    q{%[domObject.jsExpr%].%[name%] = true;}
-                ));
-            else
-                activity.runJS(mixin(Lstr!
-                    q{%[domObject.jsExpr%].%[name%] = false;}
-                ));
-        }else{
-            auto carrier = activity.carrierObject;
-            carrier.setProperty("value", value);
-
-            activity.runJS(mixin(Lstr!
-                q{%[domObject.jsExpr%].%[name%] = _carrierObject_.value;}
-            ));
-        }
-    }
-
-
-    final
-    JSValue opIndex(string name)
-    in{
-        assert(this.hasId);
-    }
-    body{
-        JSValue jv = activity.evalJS(mixin(Lstr!
-            q{%[domObject.jsExpr%].%[name%];}
-        ));
-
-        return jv;
+    {
+        mixin JSExprDOMEagerOperators!();
     }
 
 
@@ -653,103 +618,6 @@ class HTMLElement
     uint height() @property
     {
         return domObject.invoke("getBoundingClientRect")["width"].eval().get!uint;
-    }
-
-
-    /**
-    .innerHTML
-    */
-    void innerHTML(string html)
-    in{
-        assert(this.hasId);
-    }
-    body{
-        (domObject["innerHTML"] = html).run();
-    }
-
-
-    /**
-    See also: HTML.insertAdjacentHTML
-    */
-    void insertAdjacentHTML(string pos, string html)
-    in{
-
-    }
-    body{
-        domObject.invoke!"insertAdjacentHTML"(pos, html).run();
-    }
-
-
-    /**
-    append html to this, which is block element.
-    See also: jQuery.append
-    */
-    void append(string html)
-    in{
-        assert(this.hasId);
-    }
-    body{
-        this.insertAdjacentHTML("beforeend", html);
-    }
-
-
-    /**
-    prepend html to this which is block element.
-    See also: jQuery.prepend
-    */
-    void prepend(string html)
-    in{
-        assert(this.hasId);
-    }
-    body{
-        this.insertAdjacentHTML("afterbegin", html);
-    }
-
-
-    /**
-    insert html after this.
-    See also: jQuery.insertAfter
-    */
-    void insertAfter(string html)
-    in{
-        assert(this.hasId);
-    }
-    body{
-        this.insertAdjacentHTML("afterend", html);
-    }
-
-
-    /**
-    insert html before this.
-    See also: jQuery.insertBefore
-    */
-    void insertBefore(string html)
-    in{
-        assert(this.hasId);
-    }
-    body{
-        this.insertAdjacentHTML("beforebegin", html);
-    }
-
-
-    void invoke(T...)(string name, auto ref T args)
-    in{
-        assert(this.hasId);
-    }
-    body{
-      static if(T.length == 0)
-        activity.evalJS(mixin(Lstr!
-            q{%[domObject.jsExpr%].%[name%]();}
-        ));
-      else{
-        auto carrier = activity.carrierObject;
-        foreach(i, ref e; args)
-            carrier.setProperty(format("value%s", i), JSValue(e));
-
-        activity.evalJS(mixin(Lstr!
-            q{%[domObject.jsExpr%].%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
-        ));
-      }
     }
 
 
@@ -1194,130 +1062,24 @@ alias querySelectorAll = querySelectorImpl!true;
 
 auto querySelectorImpl(bool isAll)(Activity activity, string cssSelector)
 {
-    static struct Result
+    import awebview.jsvariable;
+
+    static struct QuerySelectorResult
     {
-        void opIndexAssign(T)(T value, string name)
-        if(is(typeof(JSValue(value)) : JSValue))
-        {
-            this.opIndexAssign(JSValue(value), name);
-        }
+        string jsExpr() const @property { return _jsExpr; }
+        Activity activity() @property { return _activity; }
 
 
-        void opIndexAssign(JSValue value, string name)
-        {
-            if(value.isBoolean){
-                if(value.get!bool)
-                    (_expr[name] = true).run();
-                else
-                    (_expr[name] = false).run();
-            }else{
-                auto carrier = _expr.activity.carrierObject;
-                carrier.setProperty("value", value);
-
-                _expr.activity.runJS(mixin(Lstr!
-                    q{%[_expr.jsExpr%].%[name%] = _carrierObject_.value;}
-                ));
-            }
-        }
-
-
-        JSValue opIndex(string name)
-        {
-            return _expr[name].eval();
-        }
-
-
-        /**
-        .innerHTML
-        */
-        void innerHTML(string html)
-        {
-            auto carrier = _expr.activity.carrierObject;
-            carrier.setProperty("value", JSValue(html));
-            _expr.activity.runJS(mixin(Lstr!q{
-                %[_expr.jsExpr%].innerHTML = _carrierObject_.value;
-            }));
-        }
-
-
-        /**
-        See also: HTML.insertAdjacentHTML
-        */
-        void insertAdjacentHTML(string pos, string html)
-        {
-            auto carrier = _expr.activity.carrierObject;
-            carrier.setProperty("value", JSValue(html));
-            carrier.setProperty("pos", JSValue(pos));
-            _expr.activity.runJS(mixin(Lstr!q{
-                %[_expr.jsExpr%].insertAdjacentHTML(_carrierObject_.pos, _carrierObject_.value);
-            }));
-        }
-
-
-        /**
-        append html to this, which is block element.
-        See also: jQuery.append
-        */
-        void append(string html)
-        {
-            this.insertAdjacentHTML("beforeend", html);
-        }
-
-
-        /**
-        prepend html to this which is block element.
-        See also: jQuery.prepend
-        */
-        void prepend(string html)
-        {
-            this.insertAdjacentHTML("afterbegin", html);
-        }
-
-
-        /**
-        insert html after this.
-        See also: jQuery.insertAfter
-        */
-        void insertAfter(string html)
-        {
-            this.insertAdjacentHTML("afterend", html);
-        }
-
-
-        /**
-        insert html before this.
-        See also: jQuery.insertBefore
-        */
-        void insertBefore(string html)
-        {
-            this.insertAdjacentHTML("beforebegin", html);
-        }
-
-
-        void invoke(T...)(string name, auto ref T args)
-        {
-          static if(T.length == 0)
-            _expr.activity.evalJS(mixin(Lstr!
-                q{%[_expr.jsExpr%].%[name%]();}
-            ));
-          else{
-            auto carrier = _expr.activity.carrierObject;
-            foreach(i, ref e; args)
-                carrier.setProperty(format("value%s", i), JSValue(e));
-
-            _expr.activity.evalJS(mixin(Lstr!
-                q{%[_expr.jsExpr%].%[name%](%[format("%(_carrierObject_.value%s,%)", iota(args.length))%]);}
-            ));
-          }
-        }
-
+        mixin JSExprDOMEagerOperators!();
 
       private:
-        JSExpression _expr;
+        string _jsExpr;
+        Activity _activity;
     }
 
-    Result res;
-    res._expr = JSExpression(mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])}),
-                             activity);
+    QuerySelectorResult res;
+    res._jsExpr = mixin(Lstr!q{document.%[isAll ? "querySelectorAll" : "querySelector"%](%[toLiteral(cssSelector)%])});
+    res._activity = activity;
+
     return res;
 }

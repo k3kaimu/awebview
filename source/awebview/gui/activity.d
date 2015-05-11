@@ -2,8 +2,6 @@ module awebview.gui.activity;
 
 import carbon.utils;
 
-import awebview.jsbuilder;
-
 import awebview.wrapper.websession,
        awebview.wrapper.webview,
        awebview.wrapper.webcore,
@@ -350,34 +348,6 @@ class Activity
 
 
     final
-    void runJS(string script)
-    {
-        _view.executeJS(script, "");
-    }
-
-
-    final
-    void runJS(JSExpression jsexpr)
-    {
-        jsexpr.runOn(this);
-    }
-
-
-    final
-    JSValue evalJS(string script)
-    {
-        return _view.executeJSWithRV(script, "");
-    }
-
-
-    final
-    void evalJS(JSExpression jsexpr)
-    {
-        jsexpr.evalOn(this);
-    }
-
-
-    final
     WeakRef!JSObject createObject(string name)
     {
         WebString str = name;
@@ -385,6 +355,20 @@ class Activity
         assert(v.isObject);
         _objects[name] = v;
         return _objects[name].get!(WeakRef!JSObject);
+    }
+
+
+    final
+    void runJS(string script)
+    {
+        _view.executeJS(script, "");
+    }
+
+
+    final
+    JSValue evalJS(string script)
+    {
+        return _view.executeJSWithRV(script, "");
     }
 
 
