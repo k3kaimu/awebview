@@ -13,6 +13,8 @@ import carbon.functional;
 
 import awebview.wrapper;
 
+import awebview.sound;
+
 import awebview.gui.application,
        awebview.gui.activity,
        awebview.gui.html,
@@ -49,7 +51,7 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
 {
     this(string id, string oggFileName)
     {
-        super(id, ["dora_ogg": Variant(oggFileName)]);
+        super(id, null);
 
         this ~= new Paragraph!(["style": "font-size: 15em;"])("txt_timer").digress!((a){ _txt_timer = a; });
         this ~= new InputText!()("txt_secs").digress!((a){ _txt_secs = a; });
@@ -61,6 +63,18 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         });
         this ~= new GenericButton!(import(`radio_fb_btn.html`))("radio_fb_btn").digress!((a){
             a.onClick.connect!"onChangeDirection"(this);
+        });
+        _dora = SoundChunk.fromFile(oggFileName);
+    }
+
+
+    override
+    void onStart(Activity activity)
+    {
+        super.onStart(activity);
+
+        this ~= application.to!SDLApplication.soundManager.newChannel("snd_channel").digress!((a){
+            _sndCh = a;
         });
     }
 
@@ -85,11 +99,19 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
 
         _txt_timer.text = format("%02d:%02d:%02d", diff.minutes, diff.seconds, diff.msecs / 10);
 
-        real pg = 0;
-        if(diff.minutes >= 5)
+        real pg = 100 * ((diff.minutes*60 + diff.seconds) * 1000 + diff.msecs) / (_totalSecs * 1000.0L);
+
+        if(pg >= 100)
             pg = 100;
-        else
-            pg = 100 * ((diff.minutes*60 + diff.seconds) * 1000 + diff.msecs) / (_totalSecs * 1000.0L);
+        else if(pg < 0)
+            pg = 0;
+
+        if(_isStarted && !_isForward && !_callLastOneMin){
+            if(diff.minutes == 0){
+                _callLastOneMin = true;
+                _sndCh.play(_dora);
+            }
+        }
 
         this.activity[$("#progress_bar")]["style.width"] = format("%f%%", pg);
     }
@@ -101,7 +123,8 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         _start = Clock.currTime;
         reloadTotalSeconds();
         this.elements["btn_start"]["disabled"] = true;
-        this.activity[$("#msc_start")].invoke("play");
+        _sndCh.play(_dora);
+        _callLastOneMin = false;
     }
 
 
@@ -109,6 +132,7 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
     {
         _isStarted = false;
         this.elements["btn_start"]["disabled"] = false;
+        _callLastOneMin = false;
     }
 
 
@@ -152,6 +176,10 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
     bool _isStarted;
     uint _totalSecs = 5 * 60;
     bool _isForward = true;
+    bool _callLastOneMin = false;
     ITextInput _txt_secs;
     ITextOutput _txt_timer;
+
+    SoundChannel _sndCh;
+    SoundChunk _dora;
 }

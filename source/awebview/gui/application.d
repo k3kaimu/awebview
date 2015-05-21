@@ -1,18 +1,33 @@
 module awebview.gui.application;
 
+
+import core.thread;
+
 import std.exception;
 import std.file;
+import std.concurrency;
+import std.datetime;
 
 import awebview.wrapper.webcore;
 import awebview.gui.resourceinterceptor;
-
+import awebview.sound;
 import awebview.gui.activity;
 import awebview.gui.html;
 import derelict.sdl2.sdl;
+import derelict.sdl2.mixer;
 import msgpack;
 import carbon.utils;
+import carbon.channel;
 
-import core.thread;
+
+
+struct ImmediateMessage 
+{
+    string fromId;
+    string toId;
+    string type;
+    immutable(ubyte)[] data;
+}
 
 
 abstract class Application
@@ -22,6 +37,9 @@ abstract class Application
         _savedFileName = savedFileName;
         if(exists(savedFileName))
             _savedData = unpack!(ubyte[][string])(cast(ubyte[])std.file.read(savedFileName));
+
+        _ch = channel!(ImmediateMessage);
+        _ownerTid = thisTid;
     }
 
 
@@ -64,8 +82,6 @@ abstract class Application
 
     void shutdown();
 
-
-
     final
     @property
     string exeDir() const
@@ -77,9 +93,27 @@ abstract class Application
     }
 
 
+    static
+    void sendMessage(string fromId, string toId, string type, immutable(ubyte)[] data)
+    {
+        shared msg = ImmediateMessage(fromId, toId, type, data);
+        _ch.put(msg);
+        _ownerTid.send(EventNotification.init);
+    }
+
+
+    void onReceiveImmediateMessage(ImmediateMessage msg);
+
+
   private:
     ubyte[][string] _savedData;
     string _savedFileName;
+
+
+    static shared typeof(channel!(ImmediateMessage)) _ch;
+    __gshared Tid _ownerTid;
+
+    static struct EventNotification {}
 }
 
 
@@ -91,6 +125,7 @@ class SDLApplication : Application
     this()
     {
         super(savedDataFileName);
+        _soundManager = new shared SoundManager();
     }
 
 
@@ -99,7 +134,16 @@ class SDLApplication : Application
     {
         if(_instance is null){
             DerelictSDL2.load();
-            enforce(SDL_Init(SDL_INIT_VIDEO) >= 0);
+            DerelictSDL2Mixer.load();
+
+            enforce(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) >= 0);
+
+            {
+                int flags = MIX_INIT_FLAC | MIX_INIT_MP3 | MIX_INIT_OGG;
+                int ini = Mix_Init(flags);
+                enforce((ini&flags) == flags, "Failed to init required .ogg and .mod\nMix_Init: " ~ to!string(Mix_GetError()));
+                enforce(Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096) >= 0);
+            }
 
             _instance = new SDLApplication();
 
@@ -110,6 +154,13 @@ class SDLApplication : Application
         }
 
         return _instance;
+    }
+
+
+    final
+    shared(SoundManager) soundManager() pure nothrow @safe @nogc
+    {
+        return _soundManager;
     }
 
 
@@ -134,6 +185,9 @@ class SDLApplication : Application
         }
 
         super.onDestroy();
+        Mix_CloseAudio();
+        Mix_Quit();
+        SDL_Quit();
     }
 
 
@@ -391,7 +445,23 @@ class SDLApplication : Application
                     break LInf;
             }
 
-            Thread.sleep(dur!"msecs"(5));
+            //Thread.sleep(dur!"msecs"(5));
+            auto nowTime = Clock.currTime;
+            auto target = nowTime + dur!"msecs"(5);
+            while(target > nowTime
+                && receiveTimeout(target - nowTime,
+                    (Application.EventNotification){
+                        if(auto p = Application._ch.pop!(ImmediateMessage)){
+                            auto msg = *p;
+                            onReceiveImmediateMessage(msg);
+                        }
+                    }
+                )
+            )
+            {
+                nowTime = Clock.currTime;
+            }
+
             wc.update();
         }
         _isRunning = false;
@@ -439,6 +509,15 @@ class SDLApplication : Application
     }
 
 
+
+    override
+    void onReceiveImmediateMessage(ImmediateMessage msg)
+    {
+        foreach(k, e; _acts.maybeModified) e.onReceiveImmediateMessage(msg);
+        foreach(k, e; _detachedActs.maybeModified) e.onReceiveImmediateMessage(msg);
+    }
+
+
   private:
     SDLActivity[string] _acts;
     SDLActivity[string] _detachedActs;
@@ -448,6 +527,8 @@ class SDLApplication : Application
     ubyte[][string] _savedData;
 
     void delegate()[] _runNextFrame;
+
+    shared(SoundManager) _soundManager;
 
     static SDLApplication _instance;
 }

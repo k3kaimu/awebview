@@ -159,6 +159,14 @@ abstract class HTMLPage
     }
 
 
+    void onReceiveImmediateMessage(ImmediateMessage msg)
+    {
+        foreach(k, e; elements.maybeModified){
+            e.onReceiveImmediateMessage(msg);
+        }
+    }
+
+
   private:
     Activity _activity;
     string _id;
@@ -619,6 +627,10 @@ class HTMLElement
     {
         return domObject.invoke("getBoundingClientRect")["width"].eval().get!uint;
     }
+
+
+
+    void onReceiveImmediateMessage(ImmediateMessage msg){}
 
 
   private:

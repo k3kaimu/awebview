@@ -58,6 +58,7 @@ body {
 }
 
 #tweetTable {
+    table-layout: fixed;
     width: jsExpr(docElem.clientWidth - 20); /*calc(100%w - 20px);*/
 }
 

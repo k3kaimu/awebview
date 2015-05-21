@@ -9,7 +9,7 @@
 
     "libs-windows-x86-dmd": ["awesomium_omf", "stlp45dm_static", "ole32"],
 
-    "libs-linux": ["awesomium-1-7", "stdc++"],
+    "libs-posix": ["awesomium-1-7", "stdc++"],
     "copyFiles-posix-x86_64":
       ["bin/linux64/awesomium_process",
        "bin/linux64/libawesomium-1-7.so.5.0",
@@ -32,7 +32,15 @@
                                   "bin/win32/libGLESv2.dll",
                                   "bin/win32/xinput9_1_0.dll",
                                   "bin/win32/SDL2.dll",
-                                  "bin/win32/libcurl.dll"],
+                                  "bin/win32/libcurl.dll",
+                                  "bin/win32/libFLAC-8.dll",
+                                  "bin/win32/libmikmod-2.dll",
+                                  "bin/win32/libmodplug-1.dll",
+                                  "bin/win32/libogg-0.dll",
+                                  "bin/win32/libvorbis-0.dll",
+                                  "bin/win32/libvorbisfile-3.dll",
+                                  "bin/win32/SDL2_mixer.dll",
+                                  "bin/win32/smpeg2.dll"],
       },
 
       {

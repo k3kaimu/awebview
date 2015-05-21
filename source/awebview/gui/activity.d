@@ -433,6 +433,14 @@ class Activity
     }
 
 
+    void onReceiveImmediateMessage(ImmediateMessage msg)
+    {
+        foreach(k, e; _pages.maybeModified){
+            e.page.onReceiveImmediateMessage(msg);
+        }
+    }
+
+
   private:
     Application _app;
     string _id;
