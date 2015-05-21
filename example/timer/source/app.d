@@ -92,14 +92,21 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
         else
             curr = Clock.currTime;
 
-        auto diff = (curr - _start).split!("minutes", "seconds", "msecs")();
+        bool isPos = curr >= _start;
+        auto diff = (curr - _start);
         if(!_isForward){
-            diff = (dur!"seconds"(_totalSecs) - (curr - _start)).split!("minutes", "seconds", "msecs")();
+            isPos = dur!"seconds"(_totalSecs) >= diff;
+            diff = dur!"seconds"(_totalSecs) - diff;
         }
 
-        _txt_timer.text = format("%02d:%02d:%02d", diff.minutes, diff.seconds, diff.msecs / 10);
+        auto diffSp = diff.split!("minutes", "seconds", "msecs")();
 
-        real pg = 100 * ((diff.minutes*60 + diff.seconds) * 1000 + diff.msecs) / (_totalSecs * 1000.0L);
+        if(!isPos)
+            _txt_timer.text = format("-%02d:%02d:%02d", -diffSp.minutes, -diffSp.seconds, -diffSp.msecs / 10);
+        else
+            _txt_timer.text = format("%02d:%02d:%02d", diffSp.minutes, diffSp.seconds, diffSp.msecs / 10);
+
+        real pg = 100 * ((diffSp.minutes*60 + diffSp.seconds) * 1000 + diffSp.msecs) / (_totalSecs * 1000.0L);
 
         if(pg >= 100)
             pg = 100;
@@ -107,7 +114,7 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
             pg = 0;
 
         if(_isStarted && !_isForward && !_callLastOneMin){
-            if(diff.minutes == 0){
+            if(diffSp.minutes == 0){
                 _callLastOneMin = true;
                 _sndCh.play(_dora);
             }
