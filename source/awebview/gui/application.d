@@ -11,6 +11,7 @@ import std.datetime;
 import awebview.wrapper.webcore;
 import awebview.gui.resourceinterceptor;
 import awebview.sound;
+import awebview.clock;
 import awebview.gui.activity;
 import awebview.gui.html;
 import derelict.sdl2.sdl;
@@ -125,7 +126,8 @@ class SDLApplication : Application
     this()
     {
         super(savedDataFileName);
-        _soundManager = new shared SoundManager();
+        _soundManager = SoundManager.instance;
+        _timer = new Timer();
     }
 
 
@@ -161,6 +163,13 @@ class SDLApplication : Application
     shared(SoundManager) soundManager() pure nothrow @safe @nogc
     {
         return _soundManager;
+    }
+
+
+    final
+    Timer timer() pure nothrow @safe @nogc
+    {
+        return _timer;
     }
 
 
@@ -414,6 +423,7 @@ class SDLApplication : Application
                 e();
 
             _runNextFrame.length = 0;
+            _timer.onUpdate();
 
             {
                 SDL_Event event;
@@ -515,6 +525,7 @@ class SDLApplication : Application
     {
         foreach(k, e; _acts.maybeModified) e.onReceiveImmediateMessage(msg);
         foreach(k, e; _detachedActs.maybeModified) e.onReceiveImmediateMessage(msg);
+        //_soundManager.onReceiveImmediateMessage(msg);
     }
 
 
@@ -529,6 +540,8 @@ class SDLApplication : Application
     void delegate()[] _runNextFrame;
 
     shared(SoundManager) _soundManager;
+
+    Timer _timer;
 
     static SDLApplication _instance;
 }

@@ -4,6 +4,7 @@ module awebview.sound;
 import core.atomic;
 import std.internal.scopebuffer;
 import std.algorithm;
+import std.conv;
 import std.exception;
 import std.functional;
 import std.string;
@@ -13,6 +14,14 @@ import derelict.sdl2.sdl;
 import derelict.sdl2.mixer;
 
 import awebview.gui.html;
+
+
+enum bool isEffector(E) = is(typeof((E e){
+    uint ch;
+    void[] stream;
+    e.applyEffect(ch, stream);
+    e.done(ch);
+}));
 
 
 private
@@ -224,6 +233,7 @@ private synchronized class SoundChannelImpl
     void onAttachToChannel(int id)
     {
         _id = id;
+        SDLMixer.callCLib!Mix_ChannelFinished(&channel_finished);
     }
 
 
@@ -240,6 +250,28 @@ private synchronized class SoundChannelImpl
     }
 
 
+    void playTimeout(SoundChunk chunk, int loop, Duration dur)
+    {
+        uint msecs = dur.total!"msecs".to!uint;
+        enforce(SDLMixer.callCLib!Mix_PlayChannelTimed(_id, chunk.handle, loop, msecs) == _id);
+    }
+
+
+    void playFadeIn(SoundChunk chunk, int loop, Duration dur)
+    {
+        uint msecs = dur.total!"msecs".to!uint;
+        enforce(SDLMixer.callCLib!Mix_FadeInChannel(_id, chunk.handle, loop, msecs) == _id);
+    }
+
+
+    void playFadeInChannelTimed(SoundChunk chunk, int loop, Duration fadeInDur, Duration loopDur)
+    {
+        uint msFadeIn = fadeInDur.total!"msecs".to!uint;
+        uint msLoop = loopDur.total!"msecs".to!uint;
+        enforce(SDLMixer.callCLib!Mix_FadeInChannelTimed(_id, chunk.handle, loop, msFadeIn, msLoop));
+    }
+
+
     void onFinished()
     {
         *(cast(SoundChunkImpl*)&_chunk._impl) = SoundChunk.init._impl;
@@ -252,10 +284,38 @@ private synchronized class SoundChannelImpl
     }
 
 
+    void effector(E)(E effector)
+    if(isEffector!E)
+    {
+        E* p = new E;
+        *p = effector;
+        _effector = cast(shared(E)*)p;
+
+        SDLMixer.callCLib!Mix_RegisterEffect(_id, &(effectFunc!E), &(effectDone!E), p);
+    }
+
+
   private:
     uint _id;
     SoundChunkShared _chunk;
     shared(SoundManager) _sm;
+    shared(void*) _effector;
+
+
+    static 
+    extern(C) void effectFunc(E)(int chan, void* stream, int len, void* udata)
+    {
+        E* p = cast(E*)udata;
+        p.applyEffect(chan, stream[0 .. len]);
+    }
+
+
+    static
+    extern(C) void effectDone(E)(int chan, void* udata)
+    {
+        E* p = cast(E*)udata;
+        p.done(chan);
+    }
 }
 
 
@@ -281,6 +341,13 @@ class SoundChannel : IDOnlyElement
     void onAttachToChannel(int id)
     {
         impl.onAttachToChannel(id);
+    }
+
+
+    void effector(E)(E effector)
+    if(isEffector!E)
+    {
+        impl.effector(effector);
     }
 
 
@@ -328,10 +395,33 @@ synchronized final class SoundManager
 
     void onChannelFinished(uint chId)
     {
-        _chlist[chId].onFinished();
+        if(_chlist.length < chId && _chlist[chId] !is null)
+            _chlist[chId].onFinished();
+    }
+
+
+    static
+    shared(SoundManager) instance() @property
+    {
+        if(_instance)
+            return _instance;
+        else{
+            _instance = new shared SoundManager();
+            return _instance;
+        }
     }
 
 
   private:
     shared(SoundChannelImpl)[] _chlist;
+
+  static:
+    shared SoundManager _instance;
+}
+
+
+extern(C) void channel_finished(int ch)
+{
+    if(SoundManager.instance !is null)
+        SoundManager.instance.onChannelFinished(ch);
 }
