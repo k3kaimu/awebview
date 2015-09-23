@@ -18,7 +18,7 @@ void main()
         height = 400;
         title = "Hello!";
 
-        app.addActivity(newInstance.digress!((a){
+        app.addActivity(newInstance.passTo!((a){
             a.load(new ClockPage("clockPage"));
         }));
     }

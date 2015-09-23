@@ -203,7 +203,8 @@ class SDLApplication : Application
     auto newFactoryOf(A)(WebPreferences pref)
     if(is(A : Activity))
     {
-        auto session = WebCore.instance.createWebSession(WebString(""), pref);
+        WebString emp = "";
+        auto session = WebCore.instance.createWebSession(emp, pref);
         auto factory = A.factory();
         factory.webSession = session;
         return factory;

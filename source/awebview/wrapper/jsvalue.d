@@ -33,7 +33,11 @@ struct JSValue
     this()(auto ref const WebString ws)  nothrow @nogc { this(ws.cppObj); }
 
     this(Char)(in Char[] str) nothrow @nogc
-    if(isSomeChar!Char) { this(WebString(str)); }
+    if(isSomeChar!Char)
+    {
+        WebString ws = str;
+        this(ws);
+    }
 
     this(const awebview.wrapper.cpp.JSObject jso) nothrow @nogc
     {

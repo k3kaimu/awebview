@@ -73,3 +73,45 @@ final class Timer
   private:
     RedBlackTree!(Task, "a.t < b.t") _tasks;
 }
+
+
+
+final class TimeSchedular(T)
+{
+    import std.container;
+    import std.typecons;
+
+  private
+  {
+    alias Dg = void delegate();
+  }
+
+    this()
+    {
+        _tasks = new typeof(_tasks)();
+    }
+
+
+    void opIndexAssign(Dg dg, T time)
+    {
+        _tasks.insert(tuple(time, dg));
+    }
+
+
+    void update(T time)
+    {
+        while(!_tasks.empty && _tasks.front[0] < time){
+            _tasks.front[1]();
+            _tasks.removeFront();
+        }
+    }
+
+
+    void clear()
+    {
+        _tasks.clear();
+    }
+
+  private:
+    RedBlackTree!(Tuple!(T, Dg), "a[0] < b[0]") _tasks;
+}

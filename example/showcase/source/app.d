@@ -9,6 +9,7 @@ import button_page;
 import switchlink;
 import radio_page;
 import progress_page;
+import sound_page;
 
 import std.conv;
 import carbon.functional;
@@ -24,7 +25,7 @@ void main()
         height = 400;
         title = "Showcase";
 
-        app.addActivity(newInstance.digress!((a){
+        app.addActivity(newInstance.passTo!((a){
             a.load(new MainPage());
         }));
     }
@@ -42,23 +43,25 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
     {
         super("mainPage", null);
 
-        this ~= new InputButton!()("open_showcase_button").digress!((a){
+        this ~= new InputButton!()("open_showcase_button").passTo!((a){
             a.staticProps["value"] = "Open showcase";
             a.onClick.connect!"onClickOpenShowcase"(this);
         });
 
-        this ~= new Select!()("select_page").digress!((a){
+        this ~= new Select!()("select_page").passTo!((a){
             _select = a;
             a.options ~= ["buttonActivity",     "Button"];
             a.options ~= ["switchLinkActivity", "Link"];
             a.options ~= ["radioActivity", "Radio Button"];
             a.options ~= ["progressActivity", "Progress Bar"];
+            a.options ~= ["soundActivity", "Sound"];
         });
 
         this._pages["buttonActivity"] = [new ButtonPage()];
         this._pages["switchLinkActivity"] = [new SwitchLinkPage("A"), new SwitchLinkPage("B")];
         this._pages["radioActivity"] = [new RadioPage()];
         this._pages["progressActivity"] = [new ProgressPage()];
+        this._pages["soundActivity"] = [new SoundPage()];
     }
 
 
@@ -73,7 +76,7 @@ final class MainPage : TemplateHTMLPage!(import("main.html"))
                 height = 400;
                 title = "Showcase";
 
-                app.addActivity(newInstance.digress!((a){
+                app.addActivity(newInstance.passTo!((a){
                     a.load(_pages[str][0]);
                     foreach(e; _pages[str][1 .. $])
                         a ~= e;

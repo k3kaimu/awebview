@@ -303,20 +303,21 @@ auto newJSVariable(Activity activity)
 }
 
 
-auto jsExpression(Activity activity, string jscode)
+struct JSExpressionCode
 {
-    static struct JSExpressionCode
-    {
-        string jsExpr() const @property { return _code; }
-        Activity activity() @property { return _activity; }
+    string jsExpr() const @property { return _code; }
+    Activity activity() @property { return _activity; }
 
-        mixin JSExpressionOperators!();
+    mixin JSExpressionOperators!();
 
-      private:
-        Activity _activity;
-        string _code;
-    }
+  private:
+    Activity _activity;
+    string _code;
+}
 
+
+JSExpressionCode jsExpression(Activity activity, string jscode)
+{
     return JSExpressionCode(activity, jscode);
 }
 

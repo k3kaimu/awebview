@@ -11,7 +11,7 @@ class ProgressPage : TemplateHTMLPage!(import(`progress_page.html`))
     this()
     {
         super("progressPage", null);
-        this ~= new Progress("p1").digress!((a){ _p1 = a; });
+        this ~= new Progress("p1").passTo!((a){ _p1 = a; });
         this ~= new Progress("p2");
     }
 

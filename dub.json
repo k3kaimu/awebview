@@ -72,14 +72,14 @@
       {
         "name": "postCopyCommand",
         "postGenerateCommands": [
-          "dmd unzip_parallel -run build_awewrapper"
+          "dmd build_awewrapper unzip_parallel",
         ]
       }
     ],
 
     "dependencies": {
-        "carbon": "~>1.4.1",
-        "derelict-sdl2": "~>1.9.4",
+        "carbon": "~>1.5.4",
+        "derelict-sdl2": "~>1.9.7",
         "msgpack-d": "~>0.9.6",
         "pegged": "~>0.2.1"
     }

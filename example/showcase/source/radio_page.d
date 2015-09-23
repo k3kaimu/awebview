@@ -12,9 +12,9 @@ class RadioPage : TemplateHTMLPage!(import(`radio_page.html`))
     {
         super("buttonPage", null);
         HTMLRadio[] rs;
-        this ~= new InputRadio!()("radio_0").digress!((a){ rs ~= a; });
-        this ~= new InputRadio!()("radio_1").digress!((a){ rs ~= a; });
-        this ~= new InputRadio!()("radio_2").digress!((a){ rs ~= a; });
+        this ~= new InputRadio!()("radio_0").passTo!((a){ rs ~= a; });
+        this ~= new InputRadio!()("radio_1").passTo!((a){ rs ~= a; });
+        this ~= new InputRadio!()("radio_2").passTo!((a){ rs ~= a; });
 
         this ~= new HTMLRadioGroup("radio_group", rs);
     }

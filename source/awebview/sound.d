@@ -13,6 +13,8 @@ import std.typecons;
 import derelict.sdl2.sdl;
 import derelict.sdl2.mixer;
 
+//import phobosx.signal;
+
 import awebview.gui.html;
 
 
@@ -64,7 +66,7 @@ struct SoundChunkImpl
     static
     SoundChunkImpl fromMemory(const(void)[] buf)
     {
-        auto rwobj = SDLMixer.callCLib!SDL_RWFromConstMem(buf.ptr, buf.length);
+        auto rwobj = SDLMixer.callCLib!SDL_RWFromConstMem(buf.ptr, buf.length.to!uint);
         auto chunk = SDLMixer.callCLib!Mix_LoadWAV_RW(rwobj, 1);
         return fromSDLMixChunk(chunk);
     }
@@ -154,9 +156,9 @@ struct SoundChunkImpl
 private
 struct SoundChunkShared
 {
-    this(this) shared { (*cast(SoundChunkImpl*)&_impl).increment(); }
+    this(this) { (*cast(SoundChunkImpl*)&_impl).increment(); }
 
-    ~this() shared
+    ~this()
     {
         (*cast(SoundChunkImpl*)&_impl).decrement();
     }
@@ -222,11 +224,17 @@ final synchronized class SDLMixer
 }
 
 
-private synchronized class SoundChannelImpl
+private synchronized final class SoundChannelImpl
 {
     this(shared(SoundManager) sm)
     {
         _sm = sm;
+    }
+
+
+    size_t chId() @property
+    {
+        return _id;
     }
 
 
@@ -272,26 +280,53 @@ private synchronized class SoundChannelImpl
     }
 
 
+    //mixin(signal!()("onFinishedCB"));
+
+
     void onFinished()
     {
         *(cast(SoundChunkImpl*)&_chunk._impl) = SoundChunk.init._impl;
+        //_onFinishedCB.emit();
+    }
+
+
+    void detachFromSM()
+    {
+        _sm.detachChannel(_id);
+        _id = 0;
     }
 
 
     void onDestroy()
     {
         _sm.detachChannel(_id);
+        _id = 0;
+        *(cast(SoundChunkImpl*)&_chunk._impl) = SoundChunk.init._impl;
+        _effector = null;
     }
 
 
-    void effector(E)(E effector)
+    void effector(E)(E eff)
     if(isEffector!E)
     {
+      static if(is(E == class) || is(E == interface))
+      {
+        static struct Wrapper
+        {
+          alias instance this;
+          E instance;
+        }
+
+        this.effector = Wrapper(eff);
+      }
+      else
+      {
         E* p = new E;
-        *p = effector;
+        *p = eff;
         _effector = cast(shared(E)*)p;
 
         SDLMixer.callCLib!Mix_RegisterEffect(_id, &(effectFunc!E), &(effectDone!E), p);
+      }
     }
 
 
@@ -305,21 +340,25 @@ private synchronized class SoundChannelImpl
     static 
     extern(C) void effectFunc(E)(int chan, void* stream, int len, void* udata)
     {
-        E* p = cast(E*)udata;
-        p.applyEffect(chan, stream[0 .. len]);
+        try{
+            E* p = cast(E*)udata;
+            p.applyEffect(chan, stream[0 .. len]);
+        }catch(Exception ex){}
     }
 
 
     static
     extern(C) void effectDone(E)(int chan, void* udata)
     {
-        E* p = cast(E*)udata;
-        p.done(chan);
+        try{
+            E* p = cast(E*)udata;
+            p.done(chan);
+        }catch(Exception ex){}
     }
 }
 
 
-class SoundChannel : IDOnlyElement
+final class SoundChannel : IDOnlyElement
 {
     this(string id, shared(SoundManager) sm)
     {
@@ -344,10 +383,17 @@ class SoundChannel : IDOnlyElement
     }
 
 
-    void effector(E)(E effector)
-    if(isEffector!E)
+    void detachFromSM()
     {
-        impl.effector(effector);
+        impl.detachFromSM();
+    }
+
+
+    override
+    void onDetach()
+    {
+        impl.detachFromSM();
+        super.onDetach();
     }
 
 
@@ -355,8 +401,17 @@ class SoundChannel : IDOnlyElement
     void onDestroy()
     {
         impl.onDestroy();
+        super.onDestroy();
+    }
+
+
+    void effector(E)(E effector)
+    if(isEffector!E)
+    {
+        impl.effector(effector);
     }
 }
+
 
 
 synchronized final class SoundManager
@@ -369,7 +424,7 @@ synchronized final class SoundManager
 
     SoundChannel attachChannel(SoundChannel ch)
     {
-        foreach(i, ref e; _chlist){
+        foreach(uint i, ref e; _chlist){
             if(e is null){
                 e = ch.impl;
                 ch.onAttachToChannel(i);
@@ -377,7 +432,7 @@ synchronized final class SoundManager
             }
         }
 
-        immutable len = _chlist.length;
+        immutable len = _chlist.length.to!uint;
         _chlist.length = len + 1;
         _chlist.length = Mix_AllocateChannels(_chlist.capacity.to!int);
 
@@ -387,9 +442,16 @@ synchronized final class SoundManager
     }
 
 
-    void detachChannel(uint chId)
+    private void detachChannel(uint chId)
     {
         _chlist[chId] = null;
+    }
+
+
+    void detachChannel(SoundChannel ch)
+    {
+        detachChannel(ch.chId);
+        ch.onDetach();
     }
 
 

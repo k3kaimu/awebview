@@ -15,6 +15,8 @@ public import awebview.wrapper.cpp : JSObjectType;
 
 import carbon.nonametype;
 
+debug import std.stdio;
+
 struct JSObject
 {
     ~this() nothrow @nogc
@@ -102,7 +104,8 @@ struct JSObject
 
     JSValue getProperty(string str) const nothrow @nogc
     {
-        return getProperty(WebString(str));
+        WebString ws = str;
+        return getProperty(ws);
     }
 
 
@@ -116,7 +119,8 @@ struct JSObject
 
     void setProperty(in string str, in JSValue value) nothrow @nogc
     {
-        setProperty(WebString(str), value);
+        WebString ws = str;
+        setProperty(ws, value);
     }
 
 
@@ -141,7 +145,8 @@ struct JSObject
 
     void setPropertyAsync(in string str, in JSObject value) nothrow @nogc
     {
-        setPropertyAsync(WebString(str), value);
+        WebString ws = str;
+        setPropertyAsync(ws, value);
     }
 
 
@@ -153,7 +158,8 @@ struct JSObject
 
     void removeProperty(in string str) nothrow @nogc
     {
-        removeProperty(WebString(str));
+        WebString ws = str;
+        removeProperty(ws);
     }
 
 
@@ -175,7 +181,8 @@ struct JSObject
     @property
     bool hasMethod(Char)(in Char[] str) const nothrow @nogc
     {
-        return hasMethod(WebString(str));
+        WebString ws = str;
+        return hasMethod(ws);
     }
 
 
@@ -217,7 +224,8 @@ struct JSObject
 
     void setCustomMethod(in string str, bool hasReturnValue) @nogc nothrow
     {
-        setCustomMethod(WebString(str), hasReturnValue);
+        WebString ws = str;
+        setCustomMethod(ws, hasReturnValue);
     }
 
 

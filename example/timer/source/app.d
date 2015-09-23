@@ -12,7 +12,7 @@ import carbon.utils;
 import carbon.functional;
 
 import awebview.wrapper;
-
+import awebview.clock;
 import awebview.sound;
 
 import awebview.gui.application,
@@ -26,7 +26,8 @@ import awebview.gui.application,
 /**
 Please put a music file name.
 */
-shared immutable effectMusicFile = "foo.ogg";
+shared immutable effectMusicFile1 = "nc39753.ogg";
+shared immutable effectMusicFile2 = "foo.ogg";
 
 
 void main()
@@ -35,11 +36,11 @@ void main()
     with(app.newFactoryOf!SDLActivity(WebPreferences.recommended)){
         id = "MainActivity";
         width = 1200;
-        height = 600;
+        height = 800;
         title = "Timer by D(awebview HTML)";
 
-        app.addActivity(newInstance.digress!((a){
-            a.load(new TimerPage("timer_page", effectMusicFile));
+        app.addActivity(newInstance.passTo!((a){
+            a.load(new TimerPage("timer_page"));
         }));
     }
 
@@ -49,20 +50,26 @@ void main()
 
 class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
 {
-    this(string id, string oggFileName)
+    this(string id)
     {
         super(id, null);
 
-        this ~= new Paragraph!(["style": "font-size: 15em;"])("txt_timer").digress!((a){ _txt_timer = a; });
-        this ~= new InputText!()("txt_secs").digress!((a){ _txt_secs = a; });
-        this ~= new InputButton!(["class" : "btn btn-lg btn-primary"])("btn_start").digress!((a){
+        this ~= new Paragraph!(["style": "font-size: 20em;"])("txt_timer").passTo!((a){ _txt_timer = a; });
+        //this ~= new InputText!()("txt_pres_secs").passTo!((a){ _txt_secs = a; });
+
+        foreach(key; ["txt_pres_secs", "txt_ques_secs", "txt_bell1_secs", "txt_bell2_secs", "txt_bell3_secs", "txt_bell_interval_msecs"])
+            this ~= new InputText!()(key).passTo!((a){ _txtTimes[key] = a; });
+
+        this ~= new InputButton!(["class" : "btn btn-lg btn-primary"])("btn_start").passTo!((a){
             a.onClick.connect!"onTimerStart"(this);
         });
-        this ~= new InputButton!(["class" : "btn btn-lg btn-warning"])("btn_reset").digress!((a){
+        this ~= new InputButton!(["class" : "btn btn-lg btn-warning"])("btn_reset").passTo!((a){
             a.onClick.connect!"onTimerReset"(this);
         });
-        _dora = SoundChunk.fromFile(oggFileName);
+        _thin = SoundChunk.fromFile(effectMusicFile1);
+        _dora = SoundChunk.fromFile(effectMusicFile2);
         _state = State.ended;
+        _schedular = new TimeSchedular!SysTime;
     }
 
 
@@ -71,53 +78,67 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
     {
         super.onStart(activity);
 
-        this ~= application.to!SDLApplication.soundManager.newChannel("snd_channel").digress!((a){
-            _sndCh = a;
-        });
+        foreach(i, key; ["snd_channel1", "snd_channel2", "snd_channel3"])
+            this ~= application.to!SDLApplication.soundManager.newChannel(key).passTo!((a){
+                _sndCh[i] = a;
+            });
     }
 
 
     override
     void onUpdate()
     {
+        auto curr = Clock.currTime;
+
         super.onUpdate();
         reloadTotalSeconds();
+        _schedular.update(curr);
 
-        if(_state == State.ended){
-            auto diffSp = dur!"seconds"(_totalSecs).split!("minutes", "seconds", "msecs");
-            _txt_timer.text = format("%02d:%02d:%02d", diffSp.minutes, diffSp.seconds, diffSp.msecs / 10);
-            this.activity[$("#progress_bar")]["style.width"] = "100%";
-        }else{
-            auto curr = Clock.currTime;
 
-            bool isPos = curr < _end;
-            auto diff = _end - curr;
-            auto diffSp = diff.split!("minutes", "seconds", "msecs")();
+        void showTimerText(Duration d)
+        {
+            auto diffSp = d.split!("minutes", "seconds", "msecs");
 
-            if(!isPos)
+            if(d < dur!"seconds"(0))
                 _txt_timer.text = format("-%02d:%02d:%02d", -diffSp.minutes, -diffSp.seconds, -diffSp.msecs / 10);
             else
                 _txt_timer.text = format("%02d:%02d:%02d", diffSp.minutes, diffSp.seconds, diffSp.msecs / 10);
+        }
 
-            real pg = 100 * ((diffSp.minutes*60 + diffSp.seconds) * 1000 + diffSp.msecs) / (_totalSecs * 1000.0L);
 
-            if(pg >= 100)
-                pg = 100;
-            else if(pg < 0)
-                pg = 0;
+        void setProgress(float p)
+        {
+            if(p > 1) p = 1;
+            if(p < 0) p = 0;
+            p *= 100;
+            this.activity[$("#progress_bar")]["style.width"] = format("%f%%", p);
+        }
 
-            if(_state == State.started){
-                if(diffSp.minutes == 0){
-                    _state = State.lastOneMin;
-                    _sndCh.play(_dora);
-                }
-            }else if(_state == State.lastOneMin && diffSp.seconds <= 0 && diffSp.msecs <= 0){
-                _state = State.overLimit;
-                _sndCh.play(_dora);
-                application.to!SDLApplication.timer.addTask(dur!"msecs"(700), (){ _sndCh.play(_dora); });
-            }
 
-            this.activity[$("#progress_bar")]["style.width"] = format("%f%%", pg);
+        final switch(_state)
+        {
+          case State.ended:
+            showTimerText(_presDur);
+            setProgress(1);
+            break;
+
+          case State.started:
+            auto remain = _presDur - (curr - _start);
+            showTimerText(remain);
+            setProgress(remain.total!"msecs" * 1.0 / _presDur.total!"msecs");
+            break;
+
+          case State.question:
+            auto remain = (_presDur + _quesDur) - (curr - _start);
+            showTimerText(remain);
+            setProgress(1 - remain.total!"msecs" * 1.0 / _quesDur.total!"msecs");
+            break;
+
+          case State.overLimit:
+            auto over = -((_presDur + _quesDur) - (curr - _start));
+            showTimerText(over);
+            setProgress(1);
+            break;
         }
     }
 
@@ -126,53 +147,83 @@ class TimerPage : TemplateHTMLPage!(import(`main_view.html`))
     {
         reloadTotalSeconds();
         _start = Clock.currTime;
-        _end = _start + dur!"seconds"(_totalSecs);
+
+        // set timer
+        foreach(i; ToTuple!(TRIota!(0, 3)))
+            foreach(j; ToTuple!(TRIota!(0, i+1)))
+                _schedular[_start + _bellDur[i] + j*_bellInterval] = { _sndCh[j].play( j == 2 ? _dora : _thin ); };
+
+        // set transition timer
+        _schedular[_start + _presDur] = { _state = State.question; };
+        _schedular[_start + _presDur + _quesDur] = { _state = State.overLimit; };
 
         _state = State.started;
-        this.elements["btn_start"]["disabled"] = true;
-        this.elements["txt_secs"]["disabled"] = true;
-
-        _sndCh.play(_dora);
+        foreach(key; ["btn_start", "txt_pres_secs", "txt_ques_secs", "txt_bell1_secs", "txt_bell2_secs", "txt_bell3_secs", "txt_bell_interval_msecs"])
+            this.elements[key]["disabled"] = true;
     }
 
 
     void onTimerReset(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
     {
+        _schedular.clear();
         _state = State.ended;
-        this.elements["btn_start"]["disabled"] = false;
-        this.elements["txt_secs"]["disabled"] = false;
+        foreach(key; ["btn_start", "txt_pres_secs", "txt_ques_secs", "txt_bell1_secs", "txt_bell2_secs", "txt_bell3_secs", "txt_bell_interval_msecs"])
+            this.elements[key]["disabled"] = false;
     }
 
 
     void reloadTotalSeconds()
     {
-        try
-            _totalSecs = _txt_secs.text.to!uint;
-        catch(ConvException)
-            _totalSecs = 5 * 60;
+        void setSeconds(string unit = "seconds", T)(ref T t, string id, uint defSecs)
+        {
+            try t = _txtTimes[id].text.to!uint.dur!unit;
+            catch(ConvException) t = defSecs.dur!unit;
+        }
+
+        setSeconds(_presDur, "txt_pres_secs", 5*60);
+        setSeconds(_quesDur, "txt_ques_secs", 2*60);
+        setSeconds(_bellDur[0], "txt_bell1_secs", 4*60);
+        setSeconds(_bellDur[1], "txt_bell2_secs", 5*60);
+        setSeconds(_bellDur[2], "txt_bell3_secs", 7*60);
+        setSeconds!"msecs"(_bellInterval, "txt_bell_interval_msecs", 700);
     }
 
 
     override
     void onLoad(bool isInit)
     {
+        void resetTime(string unit = "seconds", T)(T t, string id)
+        {
+            this.elements[id]["value"] = t.total!unit;
+        }
+
         super.onLoad(isInit);
 
         this.elements["btn_start"]["value"] = "Start";
         this.elements["btn_reset"]["value"] = "Reset";
-        this.elements["txt_secs"]["value"] = _totalSecs;
+        resetTime(_presDur, "txt_pres_secs");
+        resetTime(_quesDur, "txt_ques_secs");
+        resetTime(_bellDur[0], "txt_bell1_secs");
+        resetTime(_bellDur[1], "txt_bell2_secs");
+        resetTime(_bellDur[2], "txt_bell3_secs");
+        resetTime!"msecs"(_bellInterval, "txt_bell_interval_msecs");
     }
 
   private:
-    SysTime _start, _end;
-    uint _totalSecs = 5 * 60;
+    SysTime _start/*, _end*/;
+    Duration _presDur, _quesDur;
+    Duration[3] _bellDur;
+    Duration _bellInterval;
+
     State _state;
-    ITextInput _txt_secs;
+    ITextInput[string] _txtTimes;
     ITextOutput _txt_timer;
 
-    SoundChannel _sndCh;
+    SoundChannel[3] _sndCh;
     SoundChunk _dora;
+    SoundChunk _thin;
 
+    TimeSchedular!SysTime _schedular;
 
-    enum State { started, lastOneMin, overLimit, ended }
+    enum State { started, question, overLimit, ended }
 }

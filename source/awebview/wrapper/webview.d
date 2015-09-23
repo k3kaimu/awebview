@@ -194,7 +194,9 @@ struct WebView
     JSValue executeJSWithRV(S1, S2)(S1 script, S2 frameXPath)
     if(isSomeString!S1 && isSomeString!S2)
     {
-        return executeJSWithRV(WebString(script), WebString(frameXPath));
+        WebString ws1 = script;
+        WebString ws2 = frameXPath;
+        return executeJSWithRV(ws1, ws2);
     }
 
 
