@@ -34,7 +34,7 @@ void main()
         height = 600;
         title = "Twitter Client by D(awebview HTML GUI)";
 
-        app.addActivity(newInstance.digress!((a){
+        app.addActivity(newInstance.passTo!((a){
             a ~= new OAuthPage();
             a.load(new MainPage());
         }));

@@ -28,12 +28,12 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
         this ~= new InputText!()("iptCnsKey");
         this ~= new InputText!()("iptCnsSct");
 
-        this ~= new NormalButton("btnOpenBrowser").digress!((a){
+        this ~= new NormalButton("btnOpenBrowser").passTo!((a){
             a.onClick.connect!"onClickOpenBrowser"(this);
             a.staticProps["value"] = "ブラウザで開く";
         });
 
-        this ~= new NormalButton("btnDoOAuth").digress!((a){
+        this ~= new NormalButton("btnDoOAuth").passTo!((a){
             a.onClick.connect!"onClickDoOAuth"(this);
             a.staticProps["value"] = "認証";
         });
@@ -58,7 +58,7 @@ class OAuthPage : TemplateHTMLPage!(import(`oauth_page.html`))
                 height = 400;
                 title = "Twitter OAuth";
 
-                app.addActivity(newInstance.digress!((a){
+                app.addActivity(newInstance.passTo!((a){
                     a.load(new WebPage("oauthWebPage", _twTkn.callAPI!"oauth.authorizeURL"()));
                 }));
             }

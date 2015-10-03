@@ -97,7 +97,7 @@ class PopupMenu : TemplateHTMLPage!(import(`button_page_menu.html`))
     }
 
 
-    void onClickOpenNewMenuChild(FiredContext ctx, WeakRef!(const(JSArrayCpp)) args)
+    void onClickOpenNewMenuChild()
     {
         this.activity.to!SDLPopupActivity.popupChildRight(new PopupMenu(this.id), 10);
     }

@@ -23,7 +23,7 @@ class SoundPage : TemplateHTMLPage!(import(`sound_page.html`))
 
         this ~= new InputButton!()("btn_snd").unaryFun!((a){
             a.staticProps["value"] = "Play";
-            a.onClick.strongConnect((ctx, args){
+            a.onClick.strongConnect((){
                 _amp.amplitude = _txt_amp.text.to!float;
                 _chunk = SoundChunk.fromFile(_txt_snd.text);
                 _ch.play(_chunk);

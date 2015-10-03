@@ -19,7 +19,7 @@ void main()
         height = 400;
         title ="Hello!";
 
-        app.addActivity(newInstance.digress!((a){
+        app.addActivity(newInstance.passTo!((a){
             a.load(new TopPage);
         }));
     }
@@ -34,22 +34,22 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
     {
         super("topPage", null);
 
-        this ~= new InputButton!()("open_new").digress!((a){
+        this ~= new InputButton!()("open_new").passTo!((a){
             a.staticProps["value"] = "Open new window";
             a.onClick.connect!"onClickOpenWindow"(this);
         });
 
-        this ~= new InputButton!()("close_all").digress!((a){
+        this ~= new InputButton!()("close_all").passTo!((a){
             a.staticProps["value"] = "Close all windows";
             a.onClick.connect!"onClickCloseAll"(this);
         });
 
-        this ~= new InputButton!()("show_all").digress!((a){
+        this ~= new InputButton!()("show_all").passTo!((a){
             a.staticProps["value"] = "Show all windows";
             a.onClick.connect!"onClickShowAll"(this);
         });
 
-        this ~= new InputButton!()("hide_all").digress!((a){
+        this ~= new InputButton!()("hide_all").passTo!((a){
             a.staticProps["value"] = "Hide all windows";
             a.onClick.connect!"onClickHideAll"(this);
         });
@@ -70,7 +70,7 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
             height = 400;
             title = newTitle;
 
-            activity.addChild(newInstance.digress!((a){
+            activity.addChild(newInstance.passTo!((a){
                 a.load(new ChildPage());
                 application.addActivity(a);
             }));
@@ -117,9 +117,9 @@ final class TopPage : TemplateHTMLPage!(import("top.html"))
         {
             super("hello", null);
 
-            this ~= new InputButton!()("close_this").digress!((a){
+            this ~= new InputButton!()("close_this").passTo!((a){
                 a.staticProps["value"] = "Close this window";
-                a.onClick.strongConnect(delegate(ctx, args){ activity.close(); });
+                a.onClick.strongConnect((){ activity.close(); });
             });
         }
     }

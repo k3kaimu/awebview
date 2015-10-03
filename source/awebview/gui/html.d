@@ -12,7 +12,7 @@ import std.variant;
 import std.typecons;
 
 import std.array : appender;
-import std.format : formattedWrite;
+import std.format : formattedWrite, format;
 import std.functional : forward;
 import std.conv : to;
 import std.datetime;
@@ -750,6 +750,9 @@ if(is(Element : HTMLElement) && names.length >= 1)
     this(T...)(auto ref T args)
     {
         super(forward!args);
+
+        foreach(name; names)
+            mixin(format(`_%1$sEvent = new typeof(_%1$sEvent)();`, name));
     }
 
 
@@ -775,7 +778,7 @@ if(is(Element : HTMLElement) && names.length >= 1)
         {
             auto app = appender!string;
             foreach(s; names){
-                app.formattedWrite("ref RestrictedSignal!(FiredContext, WeakRef!(const(JSArrayCpp))) %1$s() { return _%1$sEvent; }\n", s);
+                app.formattedWrite("EventManager!(WeakRef!(const(JSArrayCpp))) %1$s() { return _%1$sEvent; }\n", s);
                 app.formattedWrite("override void %1$s(WeakRef!(const(JSArrayCpp)) arr) { _%1$sEvent.emit(this, arr); }\n", s);
             }
 
@@ -982,17 +985,27 @@ final class PageSignalHandler : HTMLElement
 {
     import carbon.event;
 
-    this(string id = "_event_signal_pipe") { super(id, false); }
+    this(string id = "_event_signal_pipe")
+    {
+        super(id, false);
+        _onStartEvent = new EventManager!(Activity)();
+        _onAttachEvent = new EventManager!bool();
+        _onLoadEvent = new EventManager!bool();
+        _onUpdateEvent = new EventManager!();
+        _onDetachEvent = new EventManager!();
+        _onDestroyEvent = new EventManager!();
+        _onResizeEvent = new EventManager!(size_t, size_t)();
+    }
 
   @property
   {
-    ref RestrictedSignal!(FiredContext, Activity)       onStartHandler  () { return _onStartEvent; }
-    ref RestrictedSignal!(FiredContext, bool)           onAttachHandler () { return _onAttachEvent; }
-    ref RestrictedSignal!(FiredContext, bool)           onLoadHandler   () { return _onLoadEvent; }
-    ref RestrictedSignal!(FiredContext)                 onUpdateHandler () { return _onUpdateEvent; }
-    ref RestrictedSignal!(FiredContext)                 onDetachHandler () { return _onDetachEvent; }
-    ref RestrictedSignal!(FiredContext)                 onDestroyHandler() { return _onDestroyEvent; }
-    ref RestrictedSignal!(FiredContext, size_t, size_t) onResizeHandler () { return _onResizeEvent; }
+    EventManager!(Activity)       onStartHandler  () { return _onStartEvent; }
+    EventManager!(bool)           onAttachHandler () { return _onAttachEvent; }
+    EventManager!(bool)           onLoadHandler   () { return _onLoadEvent; }
+    EventManager!()                 onUpdateHandler () { return _onUpdateEvent; }
+    EventManager!()                 onDetachHandler () { return _onDetachEvent; }
+    EventManager!()                 onDestroyHandler() { return _onDestroyEvent; }
+    EventManager!(size_t, size_t) onResizeHandler () { return _onResizeEvent; }
   }
 
     override
@@ -1023,7 +1036,7 @@ final class PageSignalHandler : HTMLElement
     void onUpdate()
     {
         super.onUpdate();
-        _onUpdateEvent.emit(this, );
+        _onUpdateEvent.emit(this);
     }
 
 
@@ -1031,7 +1044,7 @@ final class PageSignalHandler : HTMLElement
     void onDetach()
     {
         super.onDetach();
-        _onDetachEvent.emit(this, );
+        _onDetachEvent.emit(this);
     }
 
 
@@ -1039,7 +1052,7 @@ final class PageSignalHandler : HTMLElement
     void onDestroy()
     {
         super.onDestroy();
-        _onDestroyEvent.emit(this, );
+        _onDestroyEvent.emit(this);
     }
 
 
