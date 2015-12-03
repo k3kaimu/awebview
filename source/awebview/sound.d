@@ -232,7 +232,7 @@ private synchronized final class SoundChannelImpl
     }
 
 
-    size_t chId() @property
+    uint chId() @property
     {
         return _id;
     }
