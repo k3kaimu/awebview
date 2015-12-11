@@ -11,7 +11,7 @@ This is [Awesomium](http://www.awesomium.com/) wrapper and WebView GUI library f
 
 For example...
 
-~~~~~~~~~~~~~d
+```d
 // generate html page from top_view.html
 auto topPage = new TemplateHTMLPage!(import(`top_view.html`))(`Top`);
 
@@ -30,9 +30,9 @@ btn1.onClick.strongConnect((ctx, args){
 });
 
 topPage ~= btn1;
-~~~~~~~~~~~~~~
+```
 
-~~~~~~~~~~~html
+```html
 <!-- views/top_view.html -->
 <!doctype html>
 <html lang="jp">
@@ -57,4 +57,4 @@ topPage ~= btn1;
 <script src="views/bootstrap-3.3.2-dist/js/bootstrap.min.js"></script>
 </body>
 </html>
-~~~~~~~~~~~~~~~
+```
