@@ -91,8 +91,8 @@ struct JSObject
 
     bool hasProperty(string str) const nothrow @nogc
     {
-        WebString ws = str;
-        return hasProperty(ws);
+        //WebString ws = str;
+        return hasProperty(WebString(str));
     }
 
 
@@ -104,8 +104,8 @@ struct JSObject
 
     JSValue getProperty(string str) const nothrow @nogc
     {
-        WebString ws = str;
-        return getProperty(ws);
+        //WebString ws = str;
+        return getProperty(WebString(str));
     }
 
 
@@ -119,8 +119,7 @@ struct JSObject
 
     void setProperty(in string str, in JSValue value) nothrow @nogc
     {
-        WebString ws = str;
-        setProperty(ws, value);
+        setProperty(WebString(str), value);
     }
 
 
@@ -145,8 +144,8 @@ struct JSObject
 
     void setPropertyAsync(in string str, in JSObject value) nothrow @nogc
     {
-        WebString ws = str;
-        setPropertyAsync(ws, value);
+        //WebString ws = str;
+        setPropertyAsync(WebString(str), value);
     }
 
 
@@ -158,8 +157,8 @@ struct JSObject
 
     void removeProperty(in string str) nothrow @nogc
     {
-        WebString ws = str;
-        removeProperty(ws);
+        //WebString ws = str;
+        removeProperty(WebString(str));
     }
 
 
@@ -181,8 +180,8 @@ struct JSObject
     @property
     bool hasMethod(Char)(in Char[] str) const nothrow @nogc
     {
-        WebString ws = str;
-        return hasMethod(ws);
+        //WebString ws = str;
+        return hasMethod(WebString(str));
     }
 
 
@@ -224,8 +223,8 @@ struct JSObject
 
     void setCustomMethod(in string str, bool hasReturnValue) @nogc nothrow
     {
-        WebString ws = str;
-        setCustomMethod(ws, hasReturnValue);
+        //WebString ws = str;
+        setCustomMethod(WebString(str), hasReturnValue);
     }
 
 

@@ -265,7 +265,7 @@ struct WebString
 
     void clear()
     {
-        _instance.__dtor();
+        _instance.__xdtor();
         assert(!_instance.refCountedStore.isInitialized);
     }
 

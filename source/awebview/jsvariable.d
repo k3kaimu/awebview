@@ -62,8 +62,7 @@ mixin template JSExpressionOperators()
             else
                 this.activity.runJS(this.jsExpr ~ '.' ~ name ~ "= false;");
         }else{
-            auto c = this.activity.carrierObject;
-            c.setProperty("value", value);
+            this.activity.carrierObject.setProperty("value", value);
             this.activity.runJS(this.jsExpr ~ '.' ~ name ~ "=_carrierObject_.value;");
         }
     }
