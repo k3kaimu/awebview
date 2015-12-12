@@ -343,6 +343,10 @@ class TemplateHTMLPage(string form) : HTMLPage
     void addElement(HTMLElement element)
     {
         _elems[element.id] = element;
+        if(this.activity !is null){
+            element.onStart(this);
+            element.onAttach(true);
+        }
     }
 
 
