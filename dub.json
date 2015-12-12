@@ -72,7 +72,7 @@
       {
         "name": "postCopyCommand",
         "postGenerateCommands": [
-          "dmd build_awewrapper unzip_parallel",
+          "dmd -g -d unzip_parallel -run build_awewrapper",
         ]
       }
     ],
